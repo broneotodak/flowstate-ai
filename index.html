@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState AI - Real-time Project Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237dd4f0'/><text x='16' y='24' text-anchor='middle' font-size='24' fill='white'>🌊</text></svg>">
+    
+    <!-- Supabase Client - Latest v2 with Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* MUI-Style Pastel Blue Theme Variables */
+        :root {
+            /* Pastel Blue Primary Palette */
+            --primary-lighter: #c8dcfa;
+            --primary-light: #a5c3f5;
+            --primary: #7da3f0;
+            --primary-dark: #5b87de;
+            
+            /* Complementary Pastels */
+            --secondary: #f0a3d1;
+            --accent-lavender: #c3a3f0;
+            --accent-mint: #a3f0d1;
+            --accent-peach: #ffc3a3;
+            --accent-yellow: #f0e3a3;
+            
+            /* Background & Surface Colors */
+            --bg-primary: #fafbff;
+            --bg-secondary: #f0f4ff;
+            --bg-paper: #ffffff;
+            --bg-elevation-1: #ffffff;
+            --bg-elevation-2: #fafbff;
+            
+            /* Text Colors */
+            --text-primary: #2d3561;
+            --text-secondary: #5d6494;
+            --text-disabled: #9ca3d4;
+            
+            /* UI Elements */
+            --divider: #e1e8ff;
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            
+            /* Status Colors (Pastel) */
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --success: #10b981;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #a5c3f5 0%, #7da3f0 100%);
+            --gradient-mixed: linear-gradient(135deg, #a5c3f5 0%, #c3a3f0 50%, #f0a3d1 100%);
+            --gradient-ocean: linear-gradient(135deg, #a3f0d1 0%, #a3d4f5 50%, #7da3f0 100%);
+            
+            /* Shadows with blue tint */
+            --shadow-sm: 0px 2px 4px -1px rgba(125, 163, 240, 0.1);
+            --shadow-md: 0px 3px 6px -2px rgba(125, 163, 240, 0.15);
+            --shadow-lg: 0px 4px 8px -2px rgba(125, 163, 240, 0.2);
+            --shadow-xl: 0px 5px 10px -2px rgba(125, 163, 240, 0.25);
+            
+            /* Transitions */
+            --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Dark Theme */
+        [data-theme="dark"] {
+            --primary-lighter: #9db8f5;
+            --primary-light: #7da3f0;
+            --primary: #5b87de;
+            --primary-dark: #4a6fbf;
+            
+            --secondary: #de5b9f;
+            --accent-lavender: #9f5bde;
+            --accent-mint: #5bde9f;
+            --accent-peach: #de9f5b;
+            --accent-yellow: #ded15b;
+            
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-paper: #242424;
+            --bg-elevation-1: #2a2a2a;
+            --bg-elevation-2: #333333;
+            
+            --text-primary: #e4e4e4;
+            --text-secondary: #a0a0a0;
+            --text-disabled: #666666;
+            
+            --divider: #404040;
+            
+            --shadow-sm: 0px 2px 4px -1px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0px 3px 6px -2px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0px 4px 8px -2px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0px 5px 10px -2px rgba(0, 0, 0, 0.6);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: var(--transition-base);
+        }
+
+        /* Animated Gradient Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            opacity: 0.5;
+            background: var(--gradient-mixed);
+        }
+        
+        [data-theme="dark"] .bg-animation {
+            opacity: 0.05;
+            background: none;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, var(--primary-lighter) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, var(--accent-lavender) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 20%, var(--secondary) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-30px, -20px) scale(1.1); }
+            66% { transform: translate(30px, -10px) scale(0.9); }
+        }
+
+        /* MUI-Style App Bar */
+        .app-bar {
+            background: var(--bg-paper);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--divider);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-base);
+        }
+
+        .app-bar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* MUI-Style Icon Button */
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition-base);
+            color: var(--text-primary);
+        }
+
+        .icon-button:hover {
+            background: var(--primary-lighter);
+        }
+        
+        [data-theme="dark"] .icon-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Connection Chip */
+        .connection-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .connection-chip.connecting {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .connection-chip.offline {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* MUI-Style Paper/Card */
+        .paper {
+            background: var(--bg-paper);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-base);
+        }
+
+        .paper-elevated {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .paper:hover {
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* Current Context Card */
+        .context-card {
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--primary-light);
+        }
+
+        .context-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .context-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .context-header h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Live Badge */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .live-badge .status-dot {
+            background: currentColor;
+        }
+
+        /* Context Grid */
+        .context-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .context-item {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition-base);
+        }
+
+        .context-item:hover {
+            background: var(--bg-elevation-1);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .context-item h3 {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .context-item p {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .context-item .emoji {
+            font-size: 1.5rem;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-header h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .progress-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Animated Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--divider);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Project Grid */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Project Card */
+        .project-card {
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 1px solid transparent;
+            transform-origin: center top;
+        }
+
+        .project-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-light);
+        }
+
+        .project-card.active {
+            border-color: var(--primary);
+            background: var(--bg-elevation-1);
+        }
+
+        .project-card.expanded {
+            grid-column: 1 / -1;
+            background: var(--bg-elevation-2);
+            border: 2px solid var(--primary-light);
+            min-height: 400px; /* Ensure expanded card has minimum height */
+            scroll-margin-top: 100px; /* Account for sticky header */
+        }
+
+        .project-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .project-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .project-title .emoji {
+            font-size: 1.75rem;
+        }
+
+        .project-status {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Project Description */
+        .project-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Expand Indicator */
+        .expand-indicator {
+            margin-left: auto;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            transition: var(--transition-base);
+        }
+
+        .project-card:hover .expand-indicator {
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .project-card.expanded .expand-indicator {
+            transform: rotate(90deg);
+        }
+
+        /* Project Stats */
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid var(--divider);
+            border-bottom: 1px solid var(--divider);
+            margin: 1rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Team Avatars */
+        .team-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .team-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-right: 0.5rem;
+        }
+
+        .team-avatars {
+            display: flex;
+            margin-left: auto;
+        }
+
+        .team-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-paper);
+            margin-left: -10px;
+            background: var(--gradient-primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-base);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .team-avatar:first-child {
+            margin-left: 0;
+        }
+
+        .team-avatar:hover {
+            transform: translateY(-2px) scale(1.1);
+            z-index: 10;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Activity Feed */
+        .activity-card {
+            padding: 2rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition-base);
+        }
+
+        .activity-item:hover {
+            background: var(--bg-elevation-1);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .activity-item.new {
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            border: 2px solid var(--divider);
+            background: var(--bg-paper);
+        }
+
+        .activity-icon.success {
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .activity-icon.info {
+            background: var(--bg-paper);
+            border: 2px solid var(--info);
+            color: var(--info);
+        }
+
+        .activity-icon.warning {
+            background: var(--bg-paper);
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--divider);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        /* Task Section */
+        .tasks-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--divider);
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        /* MUI-Style Button */
+        .button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-base);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .button-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .button-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-bar-content,
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .context-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .project-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .project-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            /* Adjust scroll margin for mobile */
+            .project-card.expanded {
+                scroll-margin-top: 80px;
+                min-height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation"></div>
+    
+    <!-- App Bar -->
+    <header class="app-bar">
+        <div class="app-bar-content">
+            <div class="logo">
+                <h1>🌊 FlowState AI</h1>
+            </div>
+            <div class="toolbar">
+                <div class="connection-chip" id="connectionStatus">
+                    <div class="status-dot"></div>
+                    <span id="statusText">Connected</span>
+                </div>
+                <button class="icon-button" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Current Context Card -->
+        <section class="paper paper-elevated context-card">
+            <div class="context-header">
+                <h2>
+                    <span class="user-avatar">NT</span>
+                    Current Context
+                </h2>
+                <div class="live-badge">
+                    <div class="status-dot"></div>
+                    LIVE
+                </div>
+            </div>
+            <div id="currentContextContent">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section class="projects-section">
+            <div class="section-header">
+                <h2>Active Projects</h2>
+            </div>
+            <div class="project-grid" id="projectGrid">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Activity -->
+        <section class="activity-section">
+            <div class="section-header">
+                <h2>Recent Activity</h2>
+            </div>
+            <div class="paper activity-card">
+                <div id="activityFeed">
+                    <div class="loading">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+
+        // Load saved theme or default to light
+        const savedTheme = localStorage.getItem('flowstate-theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        function updateThemeIcon(theme) {
+            if (theme === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+
+        // Toggle theme on click
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('flowstate-theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6YW1hbXltZnpoZWx2a3dwdmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxNDMwNjgsImV4cCI6MjA2MzcxOTA2OH0.2ZKxIzgXEFFjLRlS3LlNYYKK1IuJ0CIkWKo-sMdSxlI';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            realtime: {
+                params: {
+                    eventsPerSecond: 10
+                }
+            }
+        });
+
+        // State
+        let currentContext = null;
+        let projects = {};
+        let activities = [];
+        let projectOwners = {};
+        let projectPhases = {};
+        let projectTasks = {};
+        let expandedProjects = new Set();
+
+        // Project definitions with descriptions
+        const projectDefinitions = {
+            'FlowState AI': {
+                emoji: '🌊',
+                description: 'Real-time project dashboard with live updates and task management',
+                color: '#7dd4f0'
+            },
+            'ClaudeN': {
+                emoji: '💜',
+                description: 'AI partnership system for enhanced productivity and memory management',
+                color: '#c37df0'
+            },
+            'ARS': {
+                emoji: '🤖',
+                description: 'AI Recruitment System - Automated candidate screening and matching',
+                color: '#7da3f0'
+            },
+            'THR': {
+                emoji: '💼',
+                description: 'Employee data migration and management system',
+                color: '#a3f5c3'
+            },
+            'TODAK': {
+                emoji: '💬',
+                description: 'WhatsApp Bot system for automated customer interactions',
+                color: '#f5d4a3'
+            },
+            'ATLAS': {
+                emoji: '📦',
+                description: 'Asset Tracking System for inventory and equipment management',
+                color: '#f0a3d1'
+            },
+            'Mastra': {
+                emoji: '🎮',
+                description: 'Game development project - Currently in Open Beta phase',
+                color: '#c3a3f0'
+            },
+            'MLBB Esports App': {
+                emoji: '📱',
+                description: 'Mobile esports application for tournament management',
+                color: '#a3d4f5'
+            },
+            'Kenal': {
+                emoji: '🏢',
+                description: 'Admin Access Management Platform for enterprise security',
+                color: '#a3f0d1'
+            },
+            'Firasah': {
+                emoji: '🔮',
+                description: 'AI-powered facial analysis and recognition system',
+                color: '#e3a3f0'
+            }
+        };
+
+        // Initialize dashboard
+        async function init() {
+            console.log('🚀 Initializing FlowState AI Dashboard...');
+            
+            await checkConnection();
+            
+            // Load initial data
+            await Promise.all([
+                loadCurrentContext(),
+                loadProjectOwners(),
+                loadProjectPhases(),
+                loadTasks(),
+                loadProjects(),
+                loadActivities()
+            ]);
+            
+            // Setup realtime subscriptions
+            setupRealtimeSubscriptions();
+            
+            console.log('✅ Dashboard initialized');
+        }
+
+        // Setup realtime subscriptions
+        function setupRealtimeSubscriptions() {
+            // Subscribe to current_context changes
+            supabase
+                .channel('current_context_channel')
+                .on('postgres_changes', 
+                    { 
+                        event: '*', 
+                        schema: 'public', 
+                        table: 'current_context',
+                        filter: 'user_id=eq.neo_todak'
+                    }, 
+                    handleContextChange
+                )
+                .subscribe();
+
+            // Subscribe to activity_log changes
+            supabase
+                .channel('activity_log_channel')
+                .on('postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'activity_log',
+                        filter: 'user_id=eq.neo_todak'
+                    },
+                    handleActivityChange
+                )
+                .subscribe();
+
+            // Subscribe to tasks changes
+            supabase
+                .channel('tasks_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'tasks'
+                    },
+                    handleTasksChange
+                )
+                .subscribe();
+        }
+
+        // Handle realtime changes
+        function handleContextChange(payload) {
+            console.log('📡 Context change:', payload);
+            loadCurrentContext();
+            loadProjects(); // Refresh to update active indicator
+        }
+
+        function handleActivityChange(payload) {
+            console.log('📡 Activity change:', payload);
+            loadActivities();
+        }
+
+        function handleTasksChange(payload) {
+            console.log('📡 Tasks change:', payload);
+            loadTasks();
+            loadProjects();
+        }
+
+        // Check connection
+        async function checkConnection() {
+            try {
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .select('id')
+                    .limit(1);
+                
+                updateConnectionStatus(true);
+            } catch (error) {
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('statusText');
+            
+            if (connected) {
+                statusEl.classList.remove('connecting', 'offline');
+                textEl.textContent = 'Connected';
+            } else {
+                statusEl.classList.add('offline');
+                textEl.textContent = 'Offline';
+            }
+        }
+
+        // Load current context
+        async function loadCurrentContext() {
+            try {
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .single();
+                
+                if (data) {
+                    currentContext = data;
+                    renderCurrentContext(data);
+                }
+            } catch (error) {
+                console.error('Error loading context:', error);
+            }
+        }
+
+        // Render current context
+        function renderCurrentContext(context) {
+            const projectDef = projectDefinitions[context.project_name] || {};
+            
+            const content = `
+                <div class="context-grid">
+                    <div class="context-item">
+                        <h3>Current Project</h3>
+                        <p><span class="emoji">${projectDef.emoji || '📁'}</span>${context.project_name}</p>
+                    </div>
+                    <div class="context-item">
+                        <h3>Working On</h3>
+                        <p>${context.current_task || 'General development'}</p>
+                    </div>
+                    <div class="context-item">
+                        <h3>Phase</h3>
+                        <p>${context.current_phase || 'Active'}</p>
+                    </div>
+                    <div class="context-item">
+                        <h3>Last Updated</h3>
+                        <p>${formatTime(context.last_updated)}</p>
+                    </div>
+                </div>
+                ${context.progress_percentage > 0 ? `
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <h3>Overall Progress</h3>
+                        <span class="progress-value">${context.progress_percentage}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${context.progress_percentage}%"></div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('currentContextContent').innerHTML = content;
+        }
+
+        // Load project owners
+        async function loadProjectOwners() {
+            try {
+                const { data, error } = await supabase
+                    .from('project_owners')
+                    .select('*')
+                    .eq('user_id', 'neo_todak');
+                
+                if (data) {
+                    projectOwners = {};
+                    data.forEach(owner => {
+                        if (!projectOwners[owner.project_name]) {
+                            projectOwners[owner.project_name] = [];
+                        }
+                        projectOwners[owner.project_name].push(owner);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading owners:', error);
+            }
+        }
+
+        // Load project phases
+        async function loadProjectPhases() {
+            try {
+                const { data, error } = await supabase
+                    .from('project_phases')
+                    .select('*')
+                    .order('project_name', { ascending: true })
+                    .order('phase_order', { ascending: true });
+                
+                if (data) {
+                    projectPhases = {};
+                    data.forEach(phase => {
+                        if (!projectPhases[phase.project_name]) {
+                            projectPhases[phase.project_name] = [];
+                        }
+                        projectPhases[phase.project_name].push(phase);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading phases:', error);
+            }
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (data) {
+                    projectTasks = {};
+                    data.forEach(task => {
+                        if (!projectTasks[task.project]) {
+                            projectTasks[task.project] = [];
+                        }
+                        projectTasks[task.project].push(task);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        // Load projects
+        async function loadProjects() {
+            try {
+                const { data: tasks, error } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (tasks) {
+                    projects = {};
+                    tasks.forEach(task => {
+                        if (!projects[task.project]) {
+                            projects[task.project] = {
+                                name: task.project,
+                                totalTasks: 0,
+                                completedTasks: 0,
+                                inProgressTasks: 0
+                            };
+                        }
+                        
+                        projects[task.project].totalTasks++;
+                        if (task.status === 'complete') {
+                            projects[task.project].completedTasks++;
+                        } else if (task.status === 'in_progress') {
+                            projects[task.project].inProgressTasks++;
+                        }
+                    });
+                    
+                    renderProjects();
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                renderDefaultProjects();
+            }
+        }
+
+        // Toggle project expansion
+        function toggleProjectExpansion(projectName) {
+            if (expandedProjects.has(projectName)) {
+                expandedProjects.delete(projectName);
+            } else {
+                expandedProjects.add(projectName);
+            }
+            renderProjects();
+            
+            // Scroll to expanded card after rendering
+            if (expandedProjects.has(projectName)) {
+                setTimeout(() => {
+                    scrollToExpandedCard(projectName);
+                }, 100); // Small delay to ensure DOM is updated
+            }
+        }
+        
+        // Scroll to expanded card
+        function scrollToExpandedCard(projectName) {
+            const projectCards = document.querySelectorAll('.project-card');
+            let targetCard = null;
+            
+            // Find the expanded card by checking its content
+            projectCards.forEach(card => {
+                const titleElement = card.querySelector('.project-title span:nth-child(2)');
+                if (titleElement && titleElement.textContent === projectName) {
+                    targetCard = card;
+                }
+            });
+            
+            if (targetCard) {
+                // Calculate the position to scroll to
+                const headerHeight = document.querySelector('.app-bar').offsetHeight;
+                const cardRect = targetCard.getBoundingClientRect();
+                const scrollTop = window.pageYOffset + cardRect.top - headerHeight - 20; // 20px padding
+                
+                // Smooth scroll to the card
+                window.scrollTo({
+                    top: scrollTop,
+                    behavior: 'smooth'
+                });
+                
+                // Add a highlight effect
+                targetCard.style.transition = 'box-shadow 0.3s ease';
+                targetCard.style.boxShadow = '0 0 0 3px var(--primary)';
+                
+                // Remove highlight after animation
+                setTimeout(() => {
+                    targetCard.style.boxShadow = '';
+                }, 1500);
+            }
+        }
+
+        // Handle project click
+        function handleProjectClick(event, projectName) {
+            const target = event.target;
+            const isButton = target.closest('button');
+            
+            if (!isButton) {
+                toggleProjectExpansion(projectName);
+            }
+        }
+
+        // Render projects
+        function renderProjects() {
+            const projectGrid = document.getElementById('projectGrid');
+            const projectNames = Object.keys(projectDefinitions);
+            
+            const projectCards = projectNames.map(projectName => {
+                const project = projects[projectName] || { totalTasks: 0, completedTasks: 0, inProgressTasks: 0 };
+                const projectDef = projectDefinitions[projectName];
+                const isActive = currentContext && currentContext.project_name === projectName;
+                const isExpanded = expandedProjects.has(projectName);
+                const phases = projectPhases[projectName] || [];
+                const owners = projectOwners[projectName] || [];
+                const tasks = projectTasks[projectName] || [];
+                
+                const progress = project.totalTasks > 0 
+                    ? Math.round((project.completedTasks / project.totalTasks) * 100) 
+                    : 0;
+                
+                return `
+                    <div class="paper project-card ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}" 
+                         onclick="handleProjectClick(event, '${projectName}')">
+                        <div class="project-header">
+                            <div class="project-title">
+                                <span class="emoji">${projectDef.emoji}</span>
+                                <span>${projectName}</span>
+                                <span class="expand-indicator">▸</span>
+                            </div>
+                            ${isActive ? '<span class="project-status">ACTIVE</span>' : ''}
+                        </div>
+                        
+                        <p class="project-description">${projectDef.description}</p>
+                        
+                        ${owners.length > 0 ? `
+                        <div class="team-section">
+                            <span class="team-label">Team:</span>
+                            <div class="team-avatars">
+                                ${owners.slice(0, 3).map(owner => `
+                                    <div class="team-avatar" title="${owner.user_name} - ${owner.role}">
+                                        ${owner.user_name.split(' ').map(n => n[0]).join('')}
+                                    </div>
+                                `).join('')}
+                                ${owners.length > 3 ? `
+                                    <div class="team-avatar">+${owners.length - 3}</div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="project-stats">
+                            <div class="stat">
+                                <div class="stat-value">${phases.length}</div>
+                                <div class="stat-label">Phases</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${tasks.length}</div>
+                                <div class="stat-label">Tasks</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${project.inProgressTasks}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${progress}%</div>
+                                <div class="stat-label">Done</div>
+                            </div>
+                        </div>
+                        
+                        ${isExpanded && tasks.length > 0 ? `
+                        <div class="tasks-section">
+                            <div class="tasks-header">
+                                <h3>Recent Tasks</h3>
+                                <button class="button button-primary">+ Add Task</button>
+                            </div>
+                            <div class="task-list">
+                                ${tasks.slice(0, 3).map(task => `
+                                    <div class="activity-item">
+                                        <div class="activity-icon ${task.status === 'complete' ? 'success' : 'info'}">
+                                            ${task.status === 'complete' ? '✓' : '○'}
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">${task.title}</div>
+                                            <div class="activity-meta">
+                                                ${task.priority ? `Priority: ${task.priority}` : ''}
+                                                ${task.due_date ? ` • Due: ${formatDate(task.due_date)}` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            projectGrid.innerHTML = projectCards;
+        }
+
+        // Render default projects
+        function renderDefaultProjects() {
+            const projectGrid = document.getElementById('projectGrid');
+            const defaultProjects = Object.keys(projectDefinitions).map(name => {
+                const def = projectDefinitions[name];
+                return `
+                    <div class="paper project-card">
+                        <div class="project-header">
+                            <div class="project-title">
+                                <span class="emoji">${def.emoji}</span>
+                                <span>${name}</span>
+                            </div>
+                        </div>
+                        <p class="project-description">${def.description}</p>
+                        <div class="project-stats">
+                            <div class="stat">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Tasks</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">0%</div>
+                                <div class="stat-label">Done</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            projectGrid.innerHTML = defaultProjects;
+        }
+
+        // Load activities
+        async function loadActivities() {
+            try {
+                const { data, error } = await supabase
+                    .from('activity_log')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (data && data.length > 0) {
+                    activities = data;
+                    renderActivities();
+                } else {
+                    renderEmptyActivities();
+                }
+            } catch (error) {
+                console.error('Error loading activities:', error);
+                renderEmptyActivities();
+            }
+        }
+
+        // Render activities
+        function renderActivities() {
+            const feed = document.getElementById('activityFeed');
+            
+            const activityItems = activities.map((activity, index) => {
+                let icon = '📌';
+                let iconClass = 'info';
+                
+                switch(activity.activity_type) {
+                    case 'deployment':
+                    case 'deployment_success':
+                        icon = '🚀';
+                        iconClass = 'success';
+                        break;
+                    case 'bug_fix':
+                    case 'error_fixed':
+                        icon = '🐛';
+                        iconClass = 'warning';
+                        break;
+                    case 'documentation':
+                    case 'ui_update':
+                        icon = '📝';
+                        break;
+                    case 'context_switch':
+                        icon = '🔄';
+                        break;
+                }
+                
+                return `
+                    <div class="activity-item ${index === 0 ? 'new' : ''}">
+                        <div class="activity-icon ${iconClass}">
+                            ${icon}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">${activity.activity_description}</div>
+                            <div class="activity-meta">
+                                ${activity.project_name} • ${formatTime(activity.created_at)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            feed.innerHTML = activityItems;
+        }
+
+        // Render empty activities
+        function renderEmptyActivities() {
+            document.getElementById('activityFeed').innerHTML = 
+                '<div class="empty-state">No recent activity</div>';
+        }
+
+        // Format time
+        function formatTime(timestamp) {
+            if (!timestamp) return 'Never';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        // Make functions globally accessible
+        window.toggleProjectExpansion = toggleProjectExpansion;
+        window.handleProjectClick = handleProjectClick;
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
