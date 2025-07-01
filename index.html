@@ -1354,32 +1354,64 @@
         // Load projects
         async function loadProjects() {
             try {
-                const { data: tasks, error } = await supabase
+                // Load project status data
+                const { data: statusData, error: statusError } = await supabase
+                    .from('project_status')
+                    .select('*')
+                    .order('progress_percentage', { ascending: false });
+                
+                // Load tasks data
+                const { data: tasks, error: tasksError } = await supabase
                     .from('tasks')
                     .select('*')
                     .order('created_at', { ascending: false });
                 
-                if (tasks) {
+                if (statusData || tasks) {
                     projects = {};
-                    tasks.forEach(task => {
-                        if (!projects[task.project]) {
-                            projects[task.project] = {
-                                name: task.project,
+                    
+                    // First, populate from project_status table
+                    if (statusData) {
+                        statusData.forEach(status => {
+                            projects[status.project_name] = {
+                                name: status.project_name,
+                                status: status.status,
+                                progress: status.progress_percentage,
+                                description: status.description,
+                                deploymentUrl: status.deployment_url,
+                                lastMilestone: status.last_milestone,
                                 totalTasks: 0,
                                 completedTasks: 0,
                                 inProgressTasks: 0
                             };
-                        }
-                        
-                        projects[task.project].totalTasks++;
-                        if (task.status === 'complete') {
-                            projects[task.project].completedTasks++;
-                        } else if (task.status === 'in_progress') {
-                            projects[task.project].inProgressTasks++;
-                        }
-                    });
+                        });
+                    }
+                    
+                    // Then, add task counts
+                    if (tasks) {
+                        tasks.forEach(task => {
+                            if (!projects[task.project]) {
+                                projects[task.project] = {
+                                    name: task.project,
+                                    status: 'active',
+                                    progress: 0,
+                                    totalTasks: 0,
+                                    completedTasks: 0,
+                                    inProgressTasks: 0
+                                };
+                            }
+                            
+                            projects[task.project].totalTasks++;
+                            if (task.status === 'complete') {
+                                projects[task.project].completedTasks++;
+                            } else if (task.status === 'in_progress') {
+                                projects[task.project].inProgressTasks++;
+                            }
+                        });
+                    }
                     
                     renderProjects();
+                } else {
+                    renderDefaultProjects();
                 }
             } catch (error) {
                 console.error('Error loading projects:', error);
@@ -1464,9 +1496,11 @@
                 const owners = projectOwners[projectName] || [];
                 const tasks = projectTasks[projectName] || [];
                 
-                const progress = project.totalTasks > 0 
-                    ? Math.round((project.completedTasks / project.totalTasks) * 100) 
-                    : 0;
+                const progress = project.progress !== undefined 
+                    ? project.progress 
+                    : (project.totalTasks > 0 
+                        ? Math.round((project.completedTasks / project.totalTasks) * 100) 
+                        : 0);
                 
                 return `
                     <div class="paper project-card ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}" 
@@ -1477,10 +1511,11 @@
                                 <span>${projectName}</span>
                                 <span class="expand-indicator">▸</span>
                             </div>
-                            ${isActive ? '<span class="project-status">ACTIVE</span>' : ''}
+                            ${project.status ? `<span class="project-status" style="border-color: ${getStatusColor(project.status)}; color: ${getStatusColor(project.status)};">${project.status.toUpperCase()}</span>` : ''}
                         </div>
                         
-                        <p class="project-description">${projectDef.description}</p>
+                        <p class="project-description">${project.description || projectDef.description}</p>
+                        ${project.lastMilestone ? `<p style="font-size: 0.875rem; color: var(--primary); margin-top: 0.5rem;">✓ ${project.lastMilestone}</p>` : ''}
                         
                         ${owners.length > 0 ? `
                         <div class="team-section">
@@ -1780,6 +1815,17 @@
                 month: 'short', 
                 day: 'numeric' 
             });
+        }
+
+        // Get status color
+        function getStatusColor(status) {
+            const colors = {
+                'active': 'var(--success)',
+                'completed': 'var(--info)',
+                'paused': 'var(--warning)',
+                'planning': 'var(--text-secondary)'
+            };
+            return colors[status] || 'var(--text-secondary)';
         }
 
         // Make functions globally accessible
