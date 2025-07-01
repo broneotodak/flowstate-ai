@@ -9,6 +9,9 @@
     <!-- Supabase Client - Latest v2 with Realtime -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
     
+    <!-- GitHub Integration -->
+    <script src="github-integration.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -1006,6 +1009,32 @@
         </section>
     </main>
 
+    <!-- GitHub Token Modal -->
+    <div id="githubTokenModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+        <div class="paper" style="max-width: 500px; width: 90%; margin: 2rem; padding: 2rem;">
+            <h2 style="margin-bottom: 1rem;">Connect GitHub Account</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary);">
+                Enter your GitHub personal access token to sync commits. 
+                <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank" style="color: var(--primary);">Create a token</a>
+            </p>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">GitHub Username</label>
+                <input type="text" id="githubUsername" placeholder="broneotodak" style="width: 100%; padding: 0.75rem; border: 2px solid var(--bg-card); border-radius: 0.5rem; background: var(--bg-paper); color: var(--text-primary);">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Personal Access Token</label>
+                <input type="password" id="githubToken" placeholder="ghp_..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--bg-card); border-radius: 0.5rem; background: var(--bg-paper); color: var(--text-primary);">
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="button" onclick="closeGitHubModal()">Cancel</button>
+                <button class="button button-primary" onclick="saveGitHubToken()">Connect</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Theme Toggle
         const themeToggle = document.getElementById('themeToggle');
@@ -1063,6 +1092,7 @@
         let timeTracking = [];
         let activeSession = null;
         let timerInterval = null;
+        let githubIntegration = null; // GitHub API integration
 
         // Project definitions with descriptions
         const projectDefinitions = {
@@ -1140,6 +1170,9 @@
             
             // Setup realtime subscriptions
             setupRealtimeSubscriptions();
+            
+            // Start timestamp heartbeat
+            startTimestampHeartbeat();
             
             console.log('✅ Dashboard initialized');
         }
@@ -2045,6 +2078,9 @@
                     .delete()
                     .eq('id', activeSession.id);
                 
+                // Update context timestamp when timer stops
+                updateContextTimestamp();
+                
                 // Clear UI
                 if (timerInterval) {
                     clearInterval(timerInterval);
@@ -2065,6 +2101,9 @@
         async function refreshGitHub() {
             // For now, just reload from database
             await loadGitHubCommits();
+            
+            // Update timestamp when syncing
+            updateContextTimestamp();
             
             // Show notification
             const button = event.target.closest('button');
@@ -2121,6 +2160,40 @@
         window.handleProjectClick = handleProjectClick;
         window.refreshGitHub = refreshGitHub;
         window.stopTimer = stopTimer;
+
+        // Update current context timestamp
+        async function updateContextTimestamp() {
+            try {
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .update({ last_updated: new Date().toISOString() })
+                    .eq('user_id', 'neo_todak')
+                    .eq('project_name', 'FlowState');
+                
+                if (error) {
+                    console.error('Error updating timestamp:', error);
+                } else {
+                    console.log('✅ Timestamp updated');
+                    // Reload context to show updated time
+                    loadCurrentContext();
+                }
+            } catch (error) {
+                console.error('Error updating timestamp:', error);
+            }
+        }
+
+        // Start heartbeat to keep timestamp current
+        function startTimestampHeartbeat() {
+            // Update immediately when dashboard loads
+            updateContextTimestamp();
+            
+            // Then update every minute while dashboard is open
+            setInterval(() => {
+                updateContextTimestamp();
+            }, 60000); // 60 seconds
+            
+            console.log('💓 Timestamp heartbeat started');
+        }
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
