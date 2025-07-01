@@ -1566,6 +1566,18 @@
                         <p class="project-description">${project.description || projectDef.description}</p>
                         ${project.lastMilestone ? `<p style="font-size: 0.875rem; color: var(--primary); margin-top: 0.5rem;">✓ ${project.lastMilestone}</p>` : ''}
                         
+                        <!-- Time Tracking Button -->
+                        <div style="margin: 1rem 0;">
+                            ${activeSession && activeSession.project_name === projectName ? 
+                                `<button class="button" style="background: var(--error); color: white;" onclick="event.stopPropagation(); stopTimer();">
+                                    ⏸️ Stop Timer
+                                </button>` :
+                                `<button class="button button-primary" onclick="event.stopPropagation(); startTimer('${projectName}');">
+                                    ▶️ Start Timer
+                                </button>`
+                            }
+                        </div>
+                        
                         ${owners.length > 0 ? `
                         <div class="team-section">
                             <span class="team-label">Team:</span>
@@ -2072,6 +2084,57 @@
             }
         }
 
+        // Start timer for a project
+        async function startTimer(projectName) {
+            try {
+                // Stop any existing timer first
+                if (activeSession) {
+                    await stopTimer();
+                }
+                
+                // Create new active session
+                const { data, error } = await supabase
+                    .from('active_sessions')
+                    .insert({
+                        user_id: 'neo_todak',
+                        project_name: projectName,
+                        start_time: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                activeSession = data;
+                
+                // Update current context to this project
+                await supabase
+                    .from('current_context')
+                    .update({ 
+                        project_name: projectName,
+                        last_updated: new Date().toISOString(),
+                        current_task: `Working on ${projectName}`
+                    })
+                    .eq('user_id', 'neo_todak');
+                
+                // Start the timer UI
+                startActiveTimer();
+                
+                // Reload everything to show updated state
+                await Promise.all([
+                    loadCurrentContext(),
+                    loadProjects(),
+                    loadTimeTracking()
+                ]);
+                
+                // Show notification
+                console.log(`⏱️ Timer started for ${projectName}`);
+                
+            } catch (error) {
+                console.error('Error starting timer:', error);
+            }
+        }
+
         // Refresh GitHub commits (placeholder for actual GitHub API integration)
         async function refreshGitHub() {
             // For now, just reload from database
@@ -2135,20 +2198,27 @@
         window.handleProjectClick = handleProjectClick;
         window.refreshGitHub = refreshGitHub;
         window.stopTimer = stopTimer;
+        window.startTimer = startTimer;
 
         // Update current context timestamp
         async function updateContextTimestamp() {
             try {
+                // Get current project from context
+                if (!currentContext || !currentContext.project_name) {
+                    console.log('No active project context');
+                    return;
+                }
+                
                 const { data, error } = await supabase
                     .from('current_context')
                     .update({ last_updated: new Date().toISOString() })
                     .eq('user_id', 'neo_todak')
-                    .eq('project_name', 'FlowState');
+                    .eq('project_name', currentContext.project_name);
                 
                 if (error) {
                     console.error('Error updating timestamp:', error);
                 } else {
-                    console.log('✅ Timestamp updated');
+                    console.log(`✅ Timestamp updated for ${currentContext.project_name}`);
                     // Reload context to show updated time
                     loadCurrentContext();
                 }
