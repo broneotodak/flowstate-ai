@@ -1923,11 +1923,15 @@
                     .from('active_sessions')
                     .select('*')
                     .eq('user_id', 'neo_todak')
-                    .single();
+                    .maybeSingle();  // Use maybeSingle() instead of single() to handle no results
                 
                 if (timeData) {
                     timeTracking = timeData;
                     renderTimeTracking();
+                }
+                
+                if (sessionError && sessionError.code !== 'PGRST116') {
+                    console.error('Error loading active session:', sessionError);
                 }
                 
                 if (sessionData) {
