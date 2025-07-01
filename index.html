@@ -908,6 +908,38 @@
             </div>
         </section>
 
+        <!-- Tools & Machines Section -->
+        <section class="tools-machines-section">
+            <div class="section-header">
+                <h2>Active Environment</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Tools Card -->
+                <div class="paper context-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--primary);">
+                        🛠️ Development Tools
+                    </h3>
+                    <div id="toolsList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="loading">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Machines Card -->
+                <div class="paper context-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--primary);">
+                        💻 Connected Machines
+                    </h3>
+                    <div id="machinesList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="loading">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Projects Section -->
         <section class="projects-section">
             <div class="section-header">
@@ -1056,7 +1088,9 @@
                 loadProjectPhases(),
                 loadTasks(),
                 loadProjects(),
-                loadActivities()
+                loadActivities(),
+                loadTools(),
+                loadMachines()
             ]);
             
             // Setup realtime subscriptions
@@ -1107,6 +1141,34 @@
                     handleTasksChange
                 )
                 .subscribe();
+
+            // Subscribe to tools changes
+            supabase
+                .channel('tools_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'user_tools',
+                        filter: 'user_id=eq.neo_todak'
+                    },
+                    handleToolsChange
+                )
+                .subscribe();
+
+            // Subscribe to machines changes
+            supabase
+                .channel('machines_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'user_machines',
+                        filter: 'user_id=eq.neo_todak'
+                    },
+                    handleMachinesChange
+                )
+                .subscribe();
         }
 
         // Handle realtime changes
@@ -1125,6 +1187,16 @@
             console.log('📡 Tasks change:', payload);
             loadTasks();
             loadProjects();
+        }
+
+        function handleToolsChange(payload) {
+            console.log('📡 Tools change:', payload);
+            loadTools();
+        }
+
+        function handleMachinesChange(payload) {
+            console.log('📡 Machines change:', payload);
+            loadMachines();
         }
 
         // Check connection
@@ -1415,8 +1487,8 @@
                             <span class="team-label">Team:</span>
                             <div class="team-avatars">
                                 ${owners.slice(0, 3).map(owner => `
-                                    <div class="team-avatar" title="${owner.user_name} - ${owner.role}">
-                                        ${owner.user_name.split(' ').map(n => n[0]).join('')}
+                                    <div class="team-avatar" title="${owner.user_name || owner.user_id} - ${owner.role}">
+                                        ${(owner.user_name || owner.user_id || 'U').split(' ').map(n => n[0]).join('').toUpperCase()}
                                     </div>
                                 `).join('')}
                                 ${owners.length > 3 ? `
@@ -1582,6 +1654,107 @@
         function renderEmptyActivities() {
             document.getElementById('activityFeed').innerHTML = 
                 '<div class="empty-state">No recent activity</div>';
+        }
+
+        // Load tools
+        async function loadTools() {
+            try {
+                const { data, error } = await supabase
+                    .from('user_tools')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .order('last_used', { ascending: false });
+                
+                if (data && data.length > 0) {
+                    renderTools(data);
+                } else {
+                    renderEmptyTools();
+                }
+            } catch (error) {
+                console.error('Error loading tools:', error);
+                renderEmptyTools();
+            }
+        }
+
+        // Render tools
+        function renderTools(tools) {
+            const toolsList = document.getElementById('toolsList');
+            
+            const toolItems = tools.map(tool => `
+                <div class="context-item" style="cursor: pointer; margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.5rem;">${tool.icon || '🔧'}</span>
+                            <div>
+                                <div style="font-weight: 500;">${tool.tool_name}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                    ${tool.tool_type} • Last used ${formatTime(tool.last_used)}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            toolsList.innerHTML = toolItems;
+        }
+
+        // Render empty tools
+        function renderEmptyTools() {
+            document.getElementById('toolsList').innerHTML = 
+                '<div class="empty-state">No tools configured</div>';
+        }
+
+        // Load machines
+        async function loadMachines() {
+            try {
+                const { data, error } = await supabase
+                    .from('user_machines')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .eq('is_active', true)
+                    .order('last_active', { ascending: false });
+                
+                if (data && data.length > 0) {
+                    renderMachines(data);
+                } else {
+                    renderEmptyMachines();
+                }
+            } catch (error) {
+                console.error('Error loading machines:', error);
+                renderEmptyMachines();
+            }
+        }
+
+        // Render machines
+        function renderMachines(machines) {
+            const machinesList = document.getElementById('machinesList');
+            
+            const machineItems = machines.map(machine => `
+                <div class="context-item" style="cursor: pointer; margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.5rem;">${machine.icon || '💻'}</span>
+                            <div>
+                                <div style="font-weight: 500;">${machine.machine_name}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                    ${machine.os} • ${machine.location} • Active ${formatTime(machine.last_active)}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            machinesList.innerHTML = machineItems;
+        }
+
+        // Render empty machines
+        function renderEmptyMachines() {
+            document.getElementById('machinesList').innerHTML = 
+                '<div class="empty-state">No machines connected</div>';
         }
 
         // Format time
