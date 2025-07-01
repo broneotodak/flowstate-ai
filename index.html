@@ -9,9 +9,6 @@
     <!-- Supabase Client - Latest v2 with Realtime -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
     
-    <!-- Chart.js for Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -955,39 +952,6 @@
             </div>
         </section>
 
-        <!-- Analytics Dashboard -->
-        <section class="analytics-section" style="margin-bottom: 3rem;">
-            <div class="section-header">
-                <h2>📊 Analytics Overview</h2>
-                <select id="analyticsTimeRange" class="button" style="padding: 0.5rem 1rem;">
-                    <option value="7">Last 7 days</option>
-                    <option value="30">Last 30 days</option>
-                    <option value="90">Last 90 days</option>
-                </select>
-            </div>
-            <div class="analytics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-                <!-- Progress Chart -->
-                <div class="paper" style="padding: 1.5rem;">
-                    <h3 style="margin-bottom: 1rem;">Progress Trends</h3>
-                    <canvas id="progressChart" height="200"></canvas>
-                </div>
-                
-                <!-- Time Spent Chart -->
-                <div class="paper" style="padding: 1.5rem;">
-                    <h3 style="margin-bottom: 1rem;">Time Distribution</h3>
-                    <canvas id="timeChart" height="200"></canvas>
-                </div>
-                
-                <!-- Activity Heatmap -->
-                <div class="paper" style="padding: 1.5rem;">
-                    <h3 style="margin-bottom: 1rem;">Activity Heatmap</h3>
-                    <div id="activityHeatmap" style="height: 200px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
-                        Loading activity data...
-                    </div>
-                </div>
-            </div>
-        </section>
-
         <!-- GitHub Activity -->
         <section class="github-section" style="margin-bottom: 3rem;">
             <div class="section-header">
@@ -1099,8 +1063,6 @@
         let timeTracking = [];
         let activeSession = null;
         let timerInterval = null;
-        let analyticsData = {};
-        let charts = {};
 
         // Project definitions with descriptions
         const projectDefinitions = {
@@ -1173,8 +1135,7 @@
                 loadTools(),
                 loadMachines(),
                 loadGitHubCommits(),
-                loadTimeTracking(),
-                loadAnalytics()
+                loadTimeTracking()
             ]);
             
             // Setup realtime subscriptions
@@ -2100,153 +2061,6 @@
             }
         }
 
-        // Load analytics
-        async function loadAnalytics() {
-            try {
-                const days = parseInt(document.getElementById('analyticsTimeRange')?.value || 7);
-                const startDate = new Date();
-                startDate.setDate(startDate.getDate() - days);
-                
-                const { data, error } = await supabase
-                    .from('project_metrics')
-                    .select('*')
-                    .gte('metric_date', startDate.toISOString().split('T')[0])
-                    .order('metric_date', { ascending: true });
-                
-                if (data && data.length > 0) {
-                    analyticsData = data;
-                    renderAnalytics();
-                } else {
-                    renderEmptyAnalytics();
-                }
-            } catch (error) {
-                console.error('Error loading analytics:', error);
-                renderEmptyAnalytics();
-            }
-        }
-
-        // Render analytics charts
-        function renderAnalytics() {
-            // Group data by project
-            const projectData = {};
-            const dates = [...new Set(analyticsData.map(d => d.metric_date))].sort();
-            
-            analyticsData.forEach(metric => {
-                if (!projectData[metric.project_name]) {
-                    projectData[metric.project_name] = {};
-                }
-                projectData[metric.project_name][metric.metric_date] = metric;
-            });
-            
-            // Progress trends chart
-            const progressCtx = document.getElementById('progressChart').getContext('2d');
-            if (charts.progress) charts.progress.destroy();
-            
-            charts.progress = new Chart(progressCtx, {
-                type: 'line',
-                data: {
-                    labels: dates.map(d => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
-                    datasets: Object.entries(projectData).slice(0, 5).map(([project, data], index) => ({
-                        label: project,
-                        data: dates.map(date => data[date]?.progress_percentage || 0),
-                        borderColor: `hsl(${index * 72}, 70%, 60%)`,
-                        backgroundColor: `hsla(${index * 72}, 70%, 60%, 0.1)`,
-                        tension: 0.3
-                    }))
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 10
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: {
-                                callback: value => value + '%'
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Time distribution chart
-            const timeCtx = document.getElementById('timeChart').getContext('2d');
-            if (charts.time) charts.time.destroy();
-            
-            const timeByProject = {};
-            analyticsData.forEach(metric => {
-                timeByProject[metric.project_name] = (timeByProject[metric.project_name] || 0) + (metric.time_spent_minutes || 0);
-            });
-            
-            charts.time = new Chart(timeCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(timeByProject).slice(0, 6),
-                    datasets: [{
-                        data: Object.values(timeByProject).slice(0, 6),
-                        backgroundColor: [
-                            '#7da3f0',
-                            '#f0a3d1',
-                            '#a3f0d1',
-                            '#ffc3a3',
-                            '#c3a3f0',
-                            '#f0e3a3'
-                        ]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                boxWidth: 12,
-                                padding: 10
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Activity heatmap placeholder
-            document.getElementById('activityHeatmap').innerHTML = `
-                <div style="text-align: center;">
-                    <p style="font-size: 2rem; margin-bottom: 0.5rem;">📊</p>
-                    <p>Activity heatmap coming soon...</p>
-                </div>
-            `;
-        }
-
-        // Render empty analytics
-        function renderEmptyAnalytics() {
-            ['progressChart', 'timeChart'].forEach(id => {
-                const canvas = document.getElementById(id);
-                if (canvas) {
-                    const ctx = canvas.getContext('2d');
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                    ctx.fillStyle = 'var(--text-secondary)';
-                    ctx.font = '14px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('No data available', ctx.canvas.width / 2, ctx.canvas.height / 2);
-                }
-            });
-            
-            const heatmap = document.getElementById('activityHeatmap');
-            if (heatmap) {
-                heatmap.innerHTML = '<div class="empty-state">No activity data available</div>';
-            }
-        }
-
         // Refresh GitHub commits (placeholder for actual GitHub API integration)
         async function refreshGitHub() {
             // For now, just reload from database
@@ -2311,12 +2125,6 @@
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
             init();
-            
-            // Add event listener for analytics time range
-            const timeRange = document.getElementById('analyticsTimeRange');
-            if (timeRange) {
-                timeRange.addEventListener('change', loadAnalytics);
-            }
         });
     </script>
 </body>
