@@ -1361,7 +1361,7 @@
         <section class="github-section" style="margin-bottom: 3rem;">
             <div class="section-header">
                 <h2>🐙 Recent Commits</h2>
-                <button class="button button-primary" onclick="refreshGitHub()">
+                <button class="button button-primary" onclick="refreshGitHub(event)">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         <path d="M9 12l2 2 4-4"/>
@@ -3030,7 +3030,7 @@
         }
 
         // Refresh GitHub commits (placeholder for actual GitHub API integration)
-        async function refreshGitHub() {
+        async function refreshGitHub(event) {
             // For now, just reload from database
             await loadGitHubCommits();
             
@@ -3038,7 +3038,7 @@
             updateContextTimestamp();
             
             // Show notification
-            const button = event.target.closest('button');
+            const button = event ? event.target.closest('button') : document.querySelector('button[onclick*="refreshGitHub"]');
             if (button) {
                 const originalText = button.innerHTML;
                 button.innerHTML = '✓ Synced!';
