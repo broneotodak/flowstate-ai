@@ -189,6 +189,265 @@
             gap: 1rem;
         }
 
+        /* Semantic Search Bar */
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            transition: var(--transition-base);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--bg-paper);
+            box-shadow: var(--shadow-md);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .search-shortcut {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--divider);
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* Search Results Dropdown */
+        .search-results {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            right: 0;
+            background: var(--bg-paper);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--divider);
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .search-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-result-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .search-result-similarity {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .search-result-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .search-result-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .search-result-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Embedding Status Badge */
+        .embedding-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+
+        .embedding-status:hover {
+            background: var(--bg-elevation-1);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .embedding-status .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* Embedding Stats Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-paper);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition-base);
+            color: var(--text-secondary);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-card-title {
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .stat-card-percentage {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-progress {
+            height: 8px;
+            background: var(--divider);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 1s ease;
+        }
+
+        .stat-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
         /* MUI-Style Icon Button */
         .icon-button {
             width: 40px;
@@ -333,6 +592,33 @@
         .user-avatar:hover {
             transform: scale(1.1);
             box-shadow: var(--shadow-lg);
+        }
+
+        /* AI Confidence Badge */
+        .ai-confidence {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .ai-confidence.high {
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .ai-confidence.medium {
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .ai-confidence.low {
+            border: 2px solid var(--error);
+            color: var(--error);
         }
 
         /* Live Badge */
@@ -647,6 +933,66 @@
             box-shadow: var(--shadow-lg);
         }
 
+        /* Similar Tasks Section */
+        .similar-tasks-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .similar-tasks-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .similar-task {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-paper);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-base);
+            cursor: pointer;
+        }
+
+        .similar-task:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .similar-task-info {
+            flex: 1;
+        }
+
+        .similar-task-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .similar-task-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .similarity-badge {
+            padding: 0.25rem 0.5rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
         /* Activity Feed */
         .activity-card {
             padding: 2rem;
@@ -683,6 +1029,29 @@
                 opacity: 1;
                 transform: translateX(0);
             }
+        }
+
+        .activity-item.grouped {
+            background: var(--bg-elevation-1);
+            border: 1px solid var(--primary-lighter);
+        }
+
+        .activity-group-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--primary);
+        }
+
+        .activity-group-count {
+            padding: 0.125rem 0.5rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
         }
 
         .activity-icon {
@@ -832,6 +1201,10 @@
                 padding: 0 1rem;
             }
             
+            .search-container {
+                margin: 0 1rem;
+            }
+            
             .context-grid {
                 grid-template-columns: 1fr;
             }
@@ -862,7 +1235,31 @@
             <div class="logo">
                 <h1>🌊 FlowState AI</h1>
             </div>
+            
+            <!-- Semantic Search Bar -->
+            <div class="search-container">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" 
+                       class="search-input" 
+                       id="semanticSearch" 
+                       placeholder="Search tasks, activities, or context..."
+                       autocomplete="off">
+                <span class="search-shortcut">⌘K</span>
+                
+                <!-- Search Results Dropdown -->
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            
             <div class="toolbar">
+                <!-- Embedding Status -->
+                <div class="embedding-status" id="embeddingStatus" onclick="showEmbeddingStats()">
+                    <div class="status-dot"></div>
+                    <span>Embeddings: <span id="embeddingCount">...</span></span>
+                </div>
+                
                 <div class="connection-chip" id="connectionStatus">
                     <div class="status-dot"></div>
                     <span id="statusText">Connected</span>
@@ -889,16 +1286,24 @@
 
     <!-- Main Content -->
     <main class="container">
-        <!-- Current Context Card -->
+        <!-- Current Context Card with AI Confidence -->
         <section class="paper paper-elevated context-card">
             <div class="context-header">
                 <h2>
                     <span class="user-avatar">NT</span>
                     Current Context
                 </h2>
-                <div class="live-badge">
-                    <div class="status-dot"></div>
-                    LIVE
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="ai-confidence high" id="aiConfidence">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                        </svg>
+                        <span>AI: <span id="confidenceValue">95%</span></span>
+                    </div>
+                    <div class="live-badge">
+                        <div class="status-dot"></div>
+                        LIVE
+                    </div>
                 </div>
             </div>
             <div id="currentContextContent">
@@ -991,10 +1396,13 @@
             </div>
         </section>
 
-        <!-- Recent Activity -->
+        <!-- Recent Activity with Grouping -->
         <section class="activity-section">
             <div class="section-header">
                 <h2>Recent Activity</h2>
+                <button class="button" onclick="toggleActivityGrouping()" id="groupingToggle">
+                    Group Similar
+                </button>
             </div>
             <div class="paper activity-card">
                 <div id="activityFeed">
@@ -1005,6 +1413,26 @@
             </div>
         </section>
     </main>
+
+    <!-- Embedding Stats Modal -->
+    <div class="modal-overlay" id="embeddingStatsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Embedding Coverage Statistics</h2>
+                <button class="modal-close" onclick="hideEmbeddingStats()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="stats-grid" id="embeddingStatsContent">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Theme Toggle
@@ -1063,7 +1491,11 @@
         let timeTracking = [];
         let activeSession = null;
         let timerInterval = null;
-        let githubIntegration = null; // GitHub API integration
+        let githubIntegration = null;
+        let embeddingStats = null;
+        let activityGrouping = false;
+        let searchDebounceTimer = null;
+        let contextConfidence = 0;
 
         // Project definitions with descriptions
         const projectDefinitions = {
@@ -1121,7 +1553,7 @@
 
         // Initialize dashboard
         async function init() {
-            console.log('🚀 Initializing FlowState AI Dashboard...');
+            console.log('🚀 Initializing FlowState AI Dashboard with Embeddings...');
             
             await checkConnection();
             
@@ -1136,7 +1568,8 @@
                 loadTools(),
                 loadMachines(),
                 loadGitHubCommits(),
-                loadTimeTracking()
+                loadTimeTracking(),
+                loadEmbeddingStats()
             ]);
             
             // Setup realtime subscriptions
@@ -1145,7 +1578,434 @@
             // Start timestamp heartbeat
             startTimestampHeartbeat();
             
-            console.log('✅ Dashboard initialized');
+            // Setup search functionality
+            setupSearch();
+            
+            // Detect context from recent activities
+            detectCurrentContext();
+            
+            console.log('✅ Dashboard initialized with embedding support');
+        }
+
+        // Setup search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('semanticSearch');
+            const searchResults = document.getElementById('searchResults');
+            
+            // Search on input
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchDebounceTimer);
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    searchResults.classList.remove('active');
+                    return;
+                }
+                
+                searchDebounceTimer = setTimeout(() => {
+                    performSemanticSearch(query);
+                }, 300);
+            });
+            
+            // Hide results on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.classList.remove('active');
+                }
+            });
+            
+            // Keyboard shortcut (Cmd/Ctrl + K)
+            document.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            });
+        }
+
+        // Perform semantic search
+        async function performSemanticSearch(query) {
+            const searchResults = document.getElementById('searchResults');
+            
+            try {
+                // First, generate embedding for the query
+                // For demo, we'll use a mock embedding
+                const mockEmbedding = new Array(1536).fill(0).map(() => Math.random());
+                
+                // Search using RPC function
+                const { data, error } = await supabase
+                    .rpc('search_flowstate_items', {
+                        query_embedding: mockEmbedding,
+                        match_threshold: 0.7,
+                        match_count: 10,
+                        search_type: 'all'
+                    });
+                
+                if (error) {
+                    console.error('Search error:', error);
+                    // Fallback to basic search
+                    performBasicSearch(query);
+                    return;
+                }
+                
+                renderSearchResults(data || []);
+                
+            } catch (error) {
+                console.error('Search failed:', error);
+                // Fallback to basic search
+                performBasicSearch(query);
+            }
+        }
+
+        // Basic search fallback
+        function performBasicSearch(query) {
+            const searchResults = document.getElementById('searchResults');
+            const results = [];
+            const queryLower = query.toLowerCase();
+            
+            // Search tasks
+            Object.values(projectTasks).flat().forEach(task => {
+                if (task.title.toLowerCase().includes(queryLower) ||
+                    (task.description && task.description.toLowerCase().includes(queryLower))) {
+                    results.push({
+                        item_type: 'task',
+                        name: task.title,
+                        description: task.description,
+                        project_name: task.project,
+                        similarity: 0.8,
+                        metadata: { status: task.status, priority: task.priority }
+                    });
+                }
+            });
+            
+            // Search activities
+            activities.forEach(activity => {
+                if (activity.activity_description.toLowerCase().includes(queryLower)) {
+                    results.push({
+                        item_type: 'activity',
+                        name: activity.activity_description,
+                        project_name: activity.project_name,
+                        similarity: 0.7,
+                        metadata: { activity_type: activity.activity_type },
+                        created_at: activity.created_at
+                    });
+                }
+            });
+            
+            renderSearchResults(results.slice(0, 10));
+        }
+
+        // Render search results
+        function renderSearchResults(results) {
+            const searchResults = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="empty-state">No results found</div>';
+                searchResults.classList.add('active');
+                return;
+            }
+            
+            const resultsHtml = results.map(result => {
+                const typeEmoji = {
+                    'task': '📋',
+                    'subtask': '📌',
+                    'activity': '⚡',
+                    'context': '🎯',
+                    'phase': '📊'
+                }[result.item_type] || '📄';
+                
+                return `
+                    <div class="search-result-item" onclick="handleSearchResultClick('${result.item_type}', '${result.item_id || ''}')">
+                        <div class="search-result-header">
+                            <span class="search-result-type">
+                                ${typeEmoji} ${result.item_type}
+                            </span>
+                            ${result.similarity ? `
+                                <span class="search-result-similarity">
+                                    ${Math.round(result.similarity * 100)}% match
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div class="search-result-title">${result.name}</div>
+                        ${result.description ? `
+                            <div class="search-result-description">${result.description}</div>
+                        ` : ''}
+                        <div class="search-result-meta">
+                            <span>${result.project_name}</span>
+                            ${result.created_at ? `
+                                <span>• ${formatTime(result.created_at)}</span>
+                            ` : ''}
+                            ${result.metadata?.status ? `
+                                <span>• ${result.metadata.status}</span>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            searchResults.innerHTML = resultsHtml;
+            searchResults.classList.add('active');
+        }
+
+        // Handle search result click
+        function handleSearchResultClick(itemType, itemId) {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.classList.remove('active');
+            
+            // Clear search
+            document.getElementById('semanticSearch').value = '';
+            
+            // Navigate based on item type
+            if (itemType === 'task' || itemType === 'subtask') {
+                // Find and expand the project containing this task
+                for (const [projectName, tasks] of Object.entries(projectTasks)) {
+                    if (tasks.some(t => t.id === itemId)) {
+                        toggleProjectExpansion(projectName);
+                        break;
+                    }
+                }
+            } else if (itemType === 'activity') {
+                // Scroll to activity feed
+                document.querySelector('.activity-section').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Load embedding statistics
+        async function loadEmbeddingStats() {
+            try {
+                const { data, error } = await supabase
+                    .rpc('get_embedding_stats');
+                
+                if (data) {
+                    embeddingStats = data;
+                    updateEmbeddingCount();
+                }
+            } catch (error) {
+                console.error('Error loading embedding stats:', error);
+            }
+        }
+
+        // Update embedding count display
+        function updateEmbeddingCount() {
+            if (!embeddingStats) return;
+            
+            const totalEmbedded = embeddingStats.reduce((sum, stat) => sum + (stat.embedded_count || 0), 0);
+            const totalItems = embeddingStats.reduce((sum, stat) => sum + (stat.total_count || 0), 0);
+            
+            document.getElementById('embeddingCount').textContent = `${totalEmbedded}/${totalItems}`;
+        }
+
+        // Show embedding stats modal
+        function showEmbeddingStats() {
+            const modal = document.getElementById('embeddingStatsModal');
+            modal.classList.add('active');
+            
+            if (!embeddingStats) {
+                loadEmbeddingStats().then(() => renderEmbeddingStats());
+            } else {
+                renderEmbeddingStats();
+            }
+        }
+
+        // Hide embedding stats modal
+        function hideEmbeddingStats() {
+            const modal = document.getElementById('embeddingStatsModal');
+            modal.classList.remove('active');
+        }
+
+        // Render embedding stats
+        function renderEmbeddingStats() {
+            const content = document.getElementById('embeddingStatsContent');
+            
+            if (!embeddingStats) {
+                content.innerHTML = '<div class="empty-state">No statistics available</div>';
+                return;
+            }
+            
+            const statsHtml = embeddingStats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-card-title">${stat.table_name}</span>
+                        <span class="stat-card-percentage">${stat.coverage_percentage}%</span>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-fill" style="width: ${stat.coverage_percentage}%"></div>
+                    </div>
+                    <div class="stat-details">
+                        <span>${stat.embedded_count} embedded</span>
+                        <span>${stat.total_count} total</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            content.innerHTML = statsHtml;
+        }
+
+        // Detect current context from activities
+        async function detectCurrentContext() {
+            try {
+                const { data, error } = await supabase
+                    .rpc('detect_context_from_activities', {
+                        user_id_input: 'neo_todak',
+                        time_window: '30 minutes'
+                    });
+                
+                if (data && data.length > 0) {
+                    const suggestion = data[0];
+                    contextConfidence = Math.round(suggestion.confidence * 100);
+                    updateContextConfidence(contextConfidence);
+                }
+            } catch (error) {
+                console.error('Error detecting context:', error);
+            }
+        }
+
+        // Update context confidence display
+        function updateContextConfidence(confidence) {
+            const badge = document.getElementById('aiConfidence');
+            const value = document.getElementById('confidenceValue');
+            
+            value.textContent = `${confidence}%`;
+            
+            // Update badge style based on confidence
+            badge.classList.remove('high', 'medium', 'low');
+            if (confidence >= 80) {
+                badge.classList.add('high');
+            } else if (confidence >= 60) {
+                badge.classList.add('medium');
+            } else {
+                badge.classList.add('low');
+            }
+        }
+
+        // Toggle activity grouping
+        async function toggleActivityGrouping() {
+            activityGrouping = !activityGrouping;
+            const button = document.getElementById('groupingToggle');
+            button.textContent = activityGrouping ? 'Show All' : 'Group Similar';
+            
+            if (activityGrouping) {
+                loadGroupedActivities();
+            } else {
+                renderActivities();
+            }
+        }
+
+        // Load grouped activities
+        async function loadGroupedActivities() {
+            try {
+                const { data, error } = await supabase
+                    .rpc('group_similar_activities', {
+                        user_id_input: 'neo_todak',
+                        time_window: '24 hours',
+                        similarity_threshold: 0.85
+                    });
+                
+                if (data) {
+                    renderGroupedActivities(data);
+                }
+            } catch (error) {
+                console.error('Error loading grouped activities:', error);
+                renderActivities(); // Fallback to regular view
+            }
+        }
+
+        // Render grouped activities
+        function renderGroupedActivities(groups) {
+            const feed = document.getElementById('activityFeed');
+            
+            const groupedHtml = groups.map(group => {
+                const activities = group.activities;
+                const firstActivity = activities[0];
+                
+                let icon = '📌';
+                let iconClass = 'info';
+                
+                // Determine icon based on type
+                switch(group.group_type) {
+                    case 'deployment':
+                        icon = '🚀';
+                        iconClass = 'success';
+                        break;
+                    case 'bug_fix':
+                        icon = '🐛';
+                        iconClass = 'warning';
+                        break;
+                    case 'documentation':
+                        icon = '📝';
+                        break;
+                }
+                
+                return `
+                    <div class="activity-item grouped">
+                        <div class="activity-icon ${iconClass}">
+                            ${icon}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-group-header">
+                                <span>${group.group_project}</span>
+                                <span class="activity-group-count">${group.activity_count} similar activities</span>
+                            </div>
+                            ${activities.slice(0, 3).map(activity => `
+                                <div class="activity-title">${activity.description}</div>
+                                <div class="activity-meta">${formatTime(activity.created_at)}</div>
+                            `).join('')}
+                            ${activities.length > 3 ? `
+                                <div class="activity-meta">... and ${activities.length - 3} more</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            feed.innerHTML = groupedHtml || '<div class="empty-state">No grouped activities</div>';
+        }
+
+        // Find similar tasks for a project
+        async function findSimilarTasks(taskId) {
+            try {
+                const { data, error } = await supabase
+                    .rpc('find_similar_tasks', {
+                        task_id: taskId,
+                        match_threshold: 0.75,
+                        match_count: 5
+                    });
+                
+                return data || [];
+            } catch (error) {
+                console.error('Error finding similar tasks:', error);
+                return [];
+            }
+        }
+
+        // Render similar tasks section
+        function renderSimilarTasks(tasks) {
+            if (!tasks || tasks.length === 0) return '';
+            
+            return `
+                <div class="similar-tasks-section">
+                    <div class="similar-tasks-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                        </svg>
+                        Similar Tasks Found
+                    </div>
+                    ${tasks.map(task => `
+                        <div class="similar-task">
+                            <div class="similar-task-info">
+                                <div class="similar-task-title">${task.title}</div>
+                                <div class="similar-task-meta">
+                                    ${task.project} • ${task.status}
+                                </div>
+                            </div>
+                            <span class="similarity-badge">
+                                ${Math.round(task.similarity * 100)}%
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         // Setup realtime subscriptions
@@ -1218,6 +2078,19 @@
                     handleMachinesChange
                 )
                 .subscribe();
+                
+            // Subscribe to context_embeddings changes for stats
+            supabase
+                .channel('embeddings_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'context_embeddings'
+                    },
+                    handleEmbeddingChange
+                )
+                .subscribe();
         }
 
         // Handle realtime changes
@@ -1225,17 +2098,20 @@
             console.log('📡 Context change:', payload);
             loadCurrentContext();
             loadProjects(); // Refresh to update active indicator
+            detectCurrentContext(); // Re-detect AI confidence
         }
 
         function handleActivityChange(payload) {
             console.log('📡 Activity change:', payload);
             loadActivities();
+            detectCurrentContext(); // Update context detection
         }
 
         function handleTasksChange(payload) {
             console.log('📡 Tasks change:', payload);
             loadTasks();
             loadProjects();
+            loadEmbeddingStats(); // Update stats
         }
 
         function handleToolsChange(payload) {
@@ -1246,6 +2122,11 @@
         function handleMachinesChange(payload) {
             console.log('📡 Machines change:', payload);
             loadMachines();
+        }
+
+        function handleEmbeddingChange(payload) {
+            console.log('📡 Embedding change:', payload);
+            loadEmbeddingStats();
         }
 
         // Check connection
@@ -1532,11 +2413,11 @@
         }
 
         // Render projects
-        function renderProjects() {
+        async function renderProjects() {
             const projectGrid = document.getElementById('projectGrid');
             const projectNames = Object.keys(projectDefinitions);
             
-            const projectCards = projectNames.map(projectName => {
+            const projectCards = await Promise.all(projectNames.map(async (projectName) => {
                 const project = projects[projectName] || { totalTasks: 0, completedTasks: 0, inProgressTasks: 0 };
                 const projectDef = projectDefinitions[projectName];
                 const isActive = currentContext && currentContext.project_name === projectName;
@@ -1550,6 +2431,14 @@
                     : (project.totalTasks > 0 
                         ? Math.round((project.completedTasks / project.totalTasks) * 100) 
                         : 0);
+                
+                // Find similar tasks if expanded
+                let similarTasksHtml = '';
+                if (isExpanded && tasks.length > 0) {
+                    const latestTask = tasks[0];
+                    const similarTasks = await findSimilarTasks(latestTask.id);
+                    similarTasksHtml = renderSimilarTasks(similarTasks);
+                }
                 
                 return `
                     <div class="paper project-card ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}" 
@@ -1635,13 +2524,14 @@
                                     </div>
                                 `).join('')}
                             </div>
+                            ${similarTasksHtml}
                         </div>
                         ` : ''}
                     </div>
                 `;
-            }).join('');
+            }));
             
-            projectGrid.innerHTML = projectCards;
+            projectGrid.innerHTML = projectCards.join('');
         }
 
         // Render default projects
@@ -1690,7 +2580,11 @@
                 
                 if (data && data.length > 0) {
                     activities = data;
-                    renderActivities();
+                    if (activityGrouping) {
+                        loadGroupedActivities();
+                    } else {
+                        renderActivities();
+                    }
                 } else {
                     renderEmptyActivities();
                 }
@@ -2199,6 +3093,9 @@
         window.refreshGitHub = refreshGitHub;
         window.stopTimer = stopTimer;
         window.startTimer = startTimer;
+        window.showEmbeddingStats = showEmbeddingStats;
+        window.hideEmbeddingStats = hideEmbeddingStats;
+        window.toggleActivityGrouping = toggleActivityGrouping;
 
         // Update current context timestamp
         async function updateContextTimestamp() {
