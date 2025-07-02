@@ -3055,6 +3055,11 @@
         function formatTime(timestamp) {
             if (!timestamp) return 'Never';
             
+            // Fix timezone issue - if timestamp doesn't end with Z, assume it's already UTC
+            if (typeof timestamp === 'string' && !timestamp.endsWith('Z') && !timestamp.includes('+')) {
+                timestamp = timestamp + 'Z';
+            }
+            
             const date = new Date(timestamp);
             const now = new Date();
             const diff = now - date;
