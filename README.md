@@ -39,4 +39,4 @@ Deployed via Netlify with continuous deployment from GitHub.
 
 ---
 
-Built with 💜 by Neo Todak
+Built with 💜 by Neo Todak# Automated tracking is working!
