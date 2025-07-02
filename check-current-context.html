@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Current Context</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1976d2; }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: inherit;
+        }
+        textarea { min-height: 60px; }
+        #results {
+            margin-top: 20px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .current-context {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .timestamp { color: #666; font-size: 0.9em; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .info { color: #2196f3; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th { background: #f0f0f0; }
+        .activity-item {
+            background: #fafafa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 FlowState Current Context Checker</h1>
+        
+        <input type="password" id="serviceKey" placeholder="Service Role Key">
+        <button onclick="checkContext()">Check Current Context</button>
+        <button onclick="checkRecentActivities()">Check Recent Activities</button>
+        <button onclick="updateContext()">Update Context Manually</button>
+        
+        <div id="results"></div>
+        
+        <div id="updateForm" style="display:none; margin-top:20px;">
+            <h3>Update Current Context:</h3>
+            <input type="text" id="projectName" placeholder="Project Name (e.g., FlowState)">
+            <textarea id="currentTask" placeholder="Current Task (e.g., Improving AI context detection)"></textarea>
+            <input type="text" id="currentPhase" placeholder="Current Phase (e.g., Development)">
+            <button onclick="saveContext()">Save Context</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return 'Never';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            // More detailed time formatting
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            
+            let timeAgo = '';
+            if (seconds < 60) timeAgo = `${seconds} seconds ago`;
+            else if (minutes < 60) timeAgo = `${minutes} minutes ago`;
+            else if (hours < 24) timeAgo = `${hours} hours ago`;
+            else timeAgo = `${days} days ago`;
+            
+            return `${date.toLocaleString()} (${timeAgo})`;
+        }
+        
+        async function checkContext() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('Please enter service key');
+                return;
+            }
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, serviceKey);
+            const results = document.getElementById('results');
+            
+            try {
+                // Get current context
+                const { data: context, error: contextError } = await supabase
+                    .from('current_context')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .single();
+                
+                let html = '<h2>Current Context:</h2>';
+                
+                if (contextError) {
+                    html += `<p class="error">Error: ${contextError.message}</p>`;
+                } else if (context) {
+                    html += `<div class="current-context">`;
+                    html += `<p><strong>Project:</strong> ${context.project_name || 'Not set'}</p>`;
+                    html += `<p><strong>Current Task:</strong> ${context.current_task || 'Not set'}</p>`;
+                    html += `<p><strong>Phase:</strong> ${context.current_phase || 'Not set'}</p>`;
+                    html += `<p><strong>Progress:</strong> ${context.progress_percentage || 0}%</p>`;
+                    html += `<p class="timestamp"><strong>Last Updated:</strong> ${formatTimestamp(context.last_updated)}</p>`;
+                    html += `<p><strong>User ID:</strong> ${context.user_id}</p>`;
+                    html += `<p><strong>Record ID:</strong> ${context.id}</p>`;
+                    html += `</div>`;
+                    
+                    // Check if timestamp is stale
+                    const lastUpdate = new Date(context.last_updated);
+                    const now = new Date();
+                    const minutesAgo = (now - lastUpdate) / 1000 / 60;
+                    
+                    if (minutesAgo > 30) {
+                        html += `<p class="error">⚠️ Context is stale! Last updated ${Math.round(minutesAgo)} minutes ago.</p>`;
+                    }
+                    
+                    // What it should be showing right now
+                    html += '<h3>What it SHOULD be showing:</h3>';
+                    html += '<div class="current-context" style="border-color: #4caf50;">';
+                    html += '<p><strong>Project:</strong> FlowState</p>';
+                    html += '<p><strong>Current Task:</strong> Improving AI context detection and embeddings integration</p>';
+                    html += '<p><strong>Phase:</strong> Development/Enhancement</p>';
+                    html += '<p class="timestamp"><strong>Last Updated:</strong> Just now (real-time)</p>';
+                    html += '</div>';
+                }
+                
+                // Try to detect context from activities
+                html += '<h3>AI Context Detection Result:</h3>';
+                const { data: detected, error: detectError } = await supabase
+                    .rpc('detect_context_from_activities', {
+                        user_id_input: 'neo_todak',
+                        time_window: '30 minutes'
+                    });
+                
+                if (detectError) {
+                    html += `<p class="error">Detection error: ${detectError.message}</p>`;
+                } else if (detected && detected.length > 0) {
+                    html += '<pre>' + JSON.stringify(detected, null, 2) + '</pre>';
+                } else {
+                    html += '<p class="info">No context detected from recent activities</p>';
+                }
+                
+                results.innerHTML = html;
+                
+            } catch (error) {
+                results.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+        
+        async function checkRecentActivities() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('Please enter service key');
+                return;
+            }
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, serviceKey);
+            const results = document.getElementById('results');
+            
+            try {
+                // Get recent activities
+                const { data: activities, error } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                let html = '<h2>Recent Activities (Last 10):</h2>';
+                
+                if (error) {
+                    html += `<p class="error">Error: ${error.message}</p>`;
+                } else if (activities && activities.length > 0) {
+                    activities.forEach(activity => {
+                        html += '<div class="activity-item">';
+                        html += `<strong>${activity.activity_type}:</strong> ${activity.description}<br>`;
+                        html += `<span class="timestamp">Project: ${activity.project_name || 'Unknown'} | ${formatTimestamp(activity.created_at)}</span>`;
+                        html += '</div>';
+                    });
+                } else {
+                    html += '<p class="info">No recent activities found</p>';
+                    html += '<p>This might be why context detection isn\'t working!</p>';
+                }
+                
+                results.innerHTML = html;
+                
+            } catch (error) {
+                results.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function updateContext() {
+            document.getElementById('updateForm').style.display = 'block';
+            // Pre-fill with current values
+            document.getElementById('projectName').value = 'FlowState';
+            document.getElementById('currentTask').value = 'Improving AI context detection and embeddings integration';
+            document.getElementById('currentPhase').value = 'Development';
+        }
+        
+        async function saveContext() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('Please enter service key');
+                return;
+            }
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, serviceKey);
+            
+            const updates = {
+                project_name: document.getElementById('projectName').value,
+                current_task: document.getElementById('currentTask').value,
+                current_phase: document.getElementById('currentPhase').value,
+                last_updated: new Date().toISOString(),
+                user_id: 'neo_todak'
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .upsert(updates, {
+                        onConflict: 'user_id'
+                    });
+                
+                if (error) {
+                    alert('Error updating context: ' + error.message);
+                } else {
+                    alert('Context updated successfully!');
+                    checkContext(); // Refresh display
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

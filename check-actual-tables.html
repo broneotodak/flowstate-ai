@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Actual Tables</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        input { width: 100%; padding: 10px; margin: 10px 0; }
+        button { padding: 10px 20px; background: #2196f3; color: white; border: none; cursor: pointer; }
+        #results { margin-top: 20px; background: #f5f5f5; padding: 20px; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1>Check Actual Tables</h1>
+    
+    <input type="password" id="serviceKey" placeholder="Service Role Key">
+    <button onclick="checkTables()">Check Tables</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function checkTables() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            const results = document.getElementById('results');
+            
+            if (!serviceKey) {
+                alert('Please enter service key');
+                return;
+            }
+            
+            const supabase = window.supabase.createClient(
+                'https://uzamamymfzhelvkwpvgt.supabase.co',
+                serviceKey
+            );
+            
+            let html = '<h3>Checking database structure...</h3>';
+            
+            // Tables to check
+            const tablesToCheck = [
+                'project_phases',
+                'tasks', 
+                'activities',
+                'time_sessions',
+                'active_sessions',
+                'subtasks',
+                'context_embeddings'
+            ];
+            
+            html += '<table>';
+            html += '<tr><th>Table</th><th>Exists</th><th>Row Count</th></tr>';
+            
+            for (const table of tablesToCheck) {
+                try {
+                    const { count, error } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        html += `<tr><td>${table}</td><td class="error">❌ No</td><td>-</td></tr>`;
+                    } else {
+                        html += `<tr><td>${table}</td><td class="success">✅ Yes</td><td>${count || 0}</td></tr>`;
+                    }
+                } catch (e) {
+                    html += `<tr><td>${table}</td><td class="error">❌ Error</td><td>-</td></tr>`;
+                }
+            }
+            
+            html += '</table>';
+            
+            // Check what get_embedding_stats returns
+            html += '<h3>get_embedding_stats function result:</h3>';
+            const { data: stats, error: statsError } = await supabase.rpc('get_embedding_stats');
+            
+            if (statsError) {
+                html += `<p class="error">Error: ${statsError.message}</p>`;
+            } else {
+                html += '<pre>' + JSON.stringify(stats, null, 2) + '</pre>';
+            }
+            
+            // Check actual embeddings
+            html += '<h3>Actual embeddings in context_embeddings:</h3>';
+            
+            // Manual grouping since Supabase doesn't support group by in JS client
+            const { data: allEmbeddings } = await supabase
+                .from('context_embeddings')
+                .select('type');
+            
+            const typeCounts = {};
+            if (allEmbeddings) {
+                allEmbeddings.forEach(e => {
+                    typeCounts[e.type] = (typeCounts[e.type] || 0) + 1;
+                });
+            }
+            
+            html += '<pre>' + JSON.stringify(typeCounts, null, 2) + '</pre>';
+            
+            html += '<h3>Recommendation:</h3>';
+            html += '<p>The get_embedding_stats function is returning data for tables that don\'t exist.';
+            html += ' You should either:</p>';
+            html += '<ol>';
+            html += '<li>Update the function to only count existing tables</li>';
+            html += '<li>Or ignore the activities count since that table doesn\'t exist</li>';
+            html += '</ol>';
+            
+            results.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

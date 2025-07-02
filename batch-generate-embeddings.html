@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState AI - Batch Embedding Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        button:hover { background: #1976d2; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #progress {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .info { color: #2196f3; }
+        .warning { color: #ff9800; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌊 FlowState AI - Batch Embedding Generator</h1>
+        
+        <p>This tool generates AI embeddings for your existing FlowState data.</p>
+        
+        <label>Supabase Service Role Key:</label>
+        <input type="password" id="serviceKey" placeholder="Your service role key">
+        
+        <button id="generateBtn" onclick="startGeneration()">Generate Embeddings</button>
+        
+        <div id="progress"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-embeddings`;
+        
+        function log(message, type = 'info') {
+            const progress = document.getElementById('progress');
+            progress.style.display = 'block';
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            progress.appendChild(entry);
+            progress.scrollTop = progress.scrollHeight;
+        }
+        
+        async function generateEmbedding(serviceKey, type, name, parentName, text, metadata = {}) {
+            try {
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${serviceKey}`
+                    },
+                    body: JSON.stringify({
+                        text,
+                        type,
+                        name,
+                        parent_name: parentName,
+                        metadata
+                    })
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    throw new Error(error);
+                }
+                
+                return true;
+            } catch (error) {
+                log(`Error for ${type}/${name}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function startGeneration() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('Please enter your service role key');
+                return;
+            }
+            
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            
+            document.getElementById('progress').innerHTML = '';
+            log('🚀 Starting batch embedding generation...', 'info');
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, serviceKey);
+            
+            try {
+                // Generate embeddings for project phases
+                log('Processing project phases...', 'info');
+                const { data: phases, error: phasesError } = await supabase
+                    .from('project_phases')
+                    .select('*');
+                
+                if (phasesError) {
+                    log(`Error fetching phases: ${phasesError.message}`, 'error');
+                } else {
+                    log(`Found ${phases.length} project phases`, 'info');
+                    let phaseSuccess = 0;
+                    
+                    for (const phase of phases) {
+                        const text = `${phase.name || ''} Status: ${phase.status || ''}`;
+                        const success = await generateEmbedding(
+                            serviceKey,
+                            'phase',
+                            phase.name || `Phase ${phase.id}`,
+                            'FlowState AI',
+                            text,
+                            { phase_id: phase.id, status: phase.status }
+                        );
+                        if (success) phaseSuccess++;
+                        
+                        // Rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                    
+                    log(`✅ Generated ${phaseSuccess}/${phases.length} phase embeddings`, 'success');
+                }
+                
+                // Generate embeddings for tasks
+                log('Processing tasks...', 'info');
+                const { data: tasks, error: tasksError } = await supabase
+                    .from('tasks')
+                    .select('*');
+                
+                if (tasksError) {
+                    log(`Error fetching tasks: ${tasksError.message}`, 'error');
+                } else {
+                    log(`Found ${tasks.length} tasks`, 'info');
+                    let taskSuccess = 0;
+                    
+                    for (const task of tasks) {
+                        const text = `${task.title || ''} ${task.description || ''} Priority: ${task.priority || ''}`;
+                        const success = await generateEmbedding(
+                            serviceKey,
+                            'task',
+                            task.title || `Task ${task.id}`,
+                            task.phase_id || 'FlowState AI',
+                            text,
+                            { 
+                                task_id: task.id, 
+                                priority: task.priority,
+                                status: task.status,
+                                phase_id: task.phase_id
+                            }
+                        );
+                        if (success) taskSuccess++;
+                        
+                        // Rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                    
+                    log(`✅ Generated ${taskSuccess}/${tasks.length} task embeddings`, 'success');
+                }
+                
+                // Check what we have in context_embeddings
+                const { data: embeddings, error: embError } = await supabase
+                    .from('context_embeddings')
+                    .select('type, name')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (!embError && embeddings) {
+                    log(`\n📊 Sample of generated embeddings:`, 'info');
+                    embeddings.forEach(e => {
+                        log(`  ${e.type}: ${e.name}`, 'success');
+                    });
+                }
+                
+                log('\n✨ Batch generation complete!', 'success');
+                log('Refresh your dashboard and try the semantic search (Cmd/Ctrl + K)', 'info');
+                
+            } catch (error) {
+                log(`Critical error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Generate Embeddings';
+            }
+        }
+    </script>
+</body>
+</html>

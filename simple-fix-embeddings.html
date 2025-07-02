@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Fix Embeddings</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #1976d2; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #progress {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .info { color: #2196f3; }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Simple Fix Embeddings</h1>
+        
+        <p>This will fix the type field to match what the dashboard expects.</p>
+        
+        <label>Supabase Service Role Key:</label>
+        <input type="password" id="serviceKey" placeholder="Your service role key">
+        
+        <div>
+            <button onclick="fixTypes()">Fix Embedding Types</button>
+            <button onclick="generateActivities()">Generate Activity Embeddings</button>
+        </div>
+        
+        <div id="progress"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-embeddings`;
+        
+        function log(message, type = 'info') {
+            const progress = document.getElementById('progress');
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            progress.appendChild(entry);
+            progress.scrollTop = progress.scrollHeight;
+        }
+        
+        async function fixTypes() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('Please enter your service role key');
+                return;
+            }
+            
+            log('🔧 Fixing embedding types...', 'info');
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, serviceKey);
+            
+            try {
+                // First, let's see what we have
+                const { data: current, error: fetchError } = await supabase
+                    .from('context_embeddings')
+                    .select('id, type, name')
+                    .in('type', ['phase', 'task', 'test']);
+                
+                if (fetchError) {
+                    log(`Error fetching: ${fetchError.message}`, 'error');
+                    return;
+                }
+                
+                log(`Found ${current.length} embeddings to fix`, 'info');
+                
+                // Fix phase -> project_phases
+                const phaseIds = current.filter(e => e.type === 'phase').map(e => e.id);
+                if (phaseIds.length > 0) {
+                    const { error: phaseError } = await supabase
+                        .from('context_embeddings')
+                        .update({ type: 'project_phases' })
+                        .in('id', phaseIds);
+                    
+                    if (phaseError) {
+                        log(`Error updating phases: ${phaseError.message}`, 'error');
+                    } else {
+                        log(`✅ Updated ${phaseIds.length} phase embeddings`, 'success');
+                    }
+                }
+                
+                // Fix task -> tasks
+                const taskIds = current.filter(e => e.type === 'task').map(e => e.id);
+                if (taskIds.length > 0) {
+                    const { error: taskError } = await supabase
+                        .from('context_embeddings')
+                        .update({ type: 'tasks' })
+                        .in('id', taskIds);
+                    
+                    if (taskError) {
+                        log(`Error updating tasks: ${taskError.message}`, 'error');
+                    } else {
+                        log(`✅ Updated ${taskIds.length} task embeddings`, 'success');
+                    }
+                }
+                
+                // Remove test entries
+                const testIds = current.filter(e => e.type === 'test').map(e => e.id);
+                if (testIds.length > 0) {
+                    const { error: deleteError } = await supabase
+                        .from('context_embeddings')
+                        .delete()
+                        .in('id', testIds);
+                    
+                    if (deleteError) {
+                        log(`Error deleting test entries: ${deleteError.message}`, 'error');
+                    } else {
+                        log(`🗑️ Removed ${testIds.length} test entries`, 'info');
+                    }
+                }
+                
+                // Check the results
+                const { data: stats } = await supabase.rpc('get_embedding_stats');
+                if (stats) {
+                    log('\n📊 Current stats:', 'info');
+                    stats.forEach(stat => {
+                        log(`${stat.table_name}: ${stat.embedded_count}/${stat.total_count}`, 'info');
+                    });
+                    
+                    const totalEmbedded = stats.reduce((sum, stat) => sum + (stat.embedded_count || 0), 0);
+                    const totalItems = stats.reduce((sum, stat) => sum + (stat.total_count || 0), 0);
+                    log(`\nDashboard shows: ${totalEmbedded}/${totalItems}`, 'success');
+                }
+                
+            } catch (error) {
+                log(`Critical error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function generateActivities() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            if (!serviceKey) {
+                alert('Please enter your service role key');
+                return;
+            }
+            
+            log('\n🚀 Generating activity embeddings...', 'info');
+            
+            const supabase = window.supabase.createClient(SUPABASE_URL, serviceKey);
+            
+            try {
+                // Fetch activities
+                const { data: activities, error: actError } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (actError) {
+                    log(`Error fetching activities: ${actError.message}`, 'error');
+                    return;
+                }
+                
+                log(`Found ${activities.length} activities`, 'info');
+                let successCount = 0;
+                
+                for (let i = 0; i < activities.length; i++) {
+                    const activity = activities[i];
+                    try {
+                        const text = `${activity.description || ''} Type: ${activity.activity_type || ''} Project: ${activity.project_name || ''}`;
+                        
+                        const response = await fetch(EDGE_FUNCTION_URL, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${serviceKey}`
+                            },
+                            body: JSON.stringify({
+                                text: text,
+                                type: 'activities',
+                                name: activity.description || `Activity ${activity.id}`,
+                                parent_name: activity.project_name || 'FlowState AI',
+                                metadata: { 
+                                    activity_id: activity.id,
+                                    activity_type: activity.activity_type,
+                                    project_name: activity.project_name
+                                }
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            successCount++;
+                            if ((i + 1) % 5 === 0) {
+                                log(`Progress: ${i + 1}/${activities.length} activities`, 'info');
+                            }
+                        } else {
+                            const error = await response.text();
+                            console.error(`Failed: ${activity.description}`, error);
+                        }
+                        
+                        // Rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                        
+                    } catch (error) {
+                        console.error(`Error processing activity:`, error);
+                    }
+                }
+                
+                log(`✅ Generated ${successCount}/${activities.length} activity embeddings`, 'success');
+                
+                // Check final stats
+                const { data: stats } = await supabase.rpc('get_embedding_stats');
+                if (stats) {
+                    const totalEmbedded = stats.reduce((sum, stat) => sum + (stat.embedded_count || 0), 0);
+                    const totalItems = stats.reduce((sum, stat) => sum + (stat.total_count || 0), 0);
+                    log(`\n🎉 Dashboard now shows: ${totalEmbedded}/${totalItems}`, 'success');
+                }
+                
+            } catch (error) {
+                log(`Critical error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

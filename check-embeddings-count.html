@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Embeddings Count</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        #results {
+            margin-top: 20px;
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Check Embeddings Count</h1>
+        
+        <input type="password" id="serviceKey" placeholder="Service Role Key">
+        <button onclick="checkCounts()">Check Counts</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        async function checkCounts() {
+            const serviceKey = document.getElementById('serviceKey').value;
+            const results = document.getElementById('results');
+            
+            if (!serviceKey) {
+                alert('Please enter service key');
+                return;
+            }
+            
+            results.innerHTML = 'Checking...';
+            
+            const supabase = window.supabase.createClient(
+                'https://uzamamymfzhelvkwpvgt.supabase.co',
+                serviceKey
+            );
+            
+            try {
+                let html = '<h3>Database Analysis:</h3>';
+                
+                // Check what's in context_embeddings
+                const { data: embeddings, count: embCount } = await supabase
+                    .from('context_embeddings')
+                    .select('type, name', { count: 'exact' })
+                    .order('created_at', { ascending: false });
+                
+                html += `<p><strong>Total embeddings in context_embeddings:</strong> ${embCount}</p>`;
+                
+                // Group by type
+                const typeCount = {};
+                embeddings.forEach(e => {
+                    typeCount[e.type] = (typeCount[e.type] || 0) + 1;
+                });
+                
+                html += '<p><strong>Embeddings by type:</strong></p>';
+                html += '<ul>';
+                for (const [type, count] of Object.entries(typeCount)) {
+                    html += `<li>${type}: ${count}</li>`;
+                }
+                html += '</ul>';
+                
+                // Check total items that might need embeddings
+                html += '<h3>Items that might need embeddings:</h3>';
+                
+                // Count project_phases
+                const { count: phaseCount } = await supabase
+                    .from('project_phases')
+                    .select('*', { count: 'exact', head: true });
+                html += `<p>Project phases: ${phaseCount || 0}</p>`;
+                
+                // Count tasks
+                const { count: taskCount } = await supabase
+                    .from('tasks')
+                    .select('*', { count: 'exact', head: true });
+                html += `<p>Tasks: ${taskCount || 0}</p>`;
+                
+                // Check if there are other tables
+                const tables = ['time_sessions', 'subtasks', 'activities', 'projects'];
+                for (const table of tables) {
+                    try {
+                        const { count } = await supabase
+                            .from(table)
+                            .select('*', { count: 'exact', head: true });
+                        if (count > 0) {
+                            html += `<p>${table}: ${count}</p>`;
+                        }
+                    } catch (e) {
+                        // Table doesn't exist
+                    }
+                }
+                
+                // Show sample of recent embeddings
+                html += '<h3>Recent embeddings:</h3>';
+                html += '<table>';
+                html += '<tr><th>Type</th><th>Name</th><th>Created</th></tr>';
+                
+                const { data: recent } = await supabase
+                    .from('context_embeddings')
+                    .select('type, name, created_at')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                recent.forEach(r => {
+                    const date = new Date(r.created_at).toLocaleString();
+                    html += `<tr><td>${r.type}</td><td>${r.name}</td><td>${date}</td></tr>`;
+                });
+                html += '</table>';
+                
+                results.innerHTML = html;
+                
+            } catch (error) {
+                results.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

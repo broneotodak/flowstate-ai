@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState Activity Logger</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .quick-log {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .quick-button {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .quick-button:hover {
+            border-color: #2196f3;
+            background: #e3f2fd;
+        }
+        .quick-button.active {
+            border-color: #2196f3;
+            background: #2196f3;
+            color: white;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: inherit;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover { background: #1976d2; }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        .success { background: #c8e6c9; color: #2e7d32; }
+        .error { background: #ffcdd2; color: #c62828; }
+        .timer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .timer.active {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+        }
+        #elapsedTime {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 FlowState Activity Logger</h1>
+        <p>Quick activity logging to keep your context accurate</p>
+        
+        <div style="display:none">
+            <input type="password" id="serviceKey" placeholder="Service Role Key (stored locally)">
+            <button onclick="saveKey()">Save Key</button>
+        </div>
+        
+        <div class="quick-log">
+            <div class="quick-button" onclick="selectProject('FlowState')">FlowState</div>
+            <div class="quick-button" onclick="selectProject('ClaudeN')">ClaudeN</div>
+            <div class="quick-button" onclick="selectProject('Other')">Other</div>
+        </div>
+        
+        <select id="activityType">
+            <option value="ai_conversation">AI Conversation</option>
+            <option value="coding">Coding</option>
+            <option value="debugging">Debugging</option>
+            <option value="planning">Planning</option>
+            <option value="research">Research</option>
+            <option value="testing">Testing</option>
+            <option value="documentation">Documentation</option>
+        </select>
+        
+        <textarea id="description" placeholder="What are you working on? (e.g., Discussing FlowState embeddings with Claude)" rows="3"></textarea>
+        
+        <div class="timer">
+            <div>
+                <strong>Session Time:</strong>
+                <span id="elapsedTime">00:00</span>
+            </div>
+            <button id="timerButton" onclick="toggleTimer()" style="width: auto; margin: 0;">Start Timer</button>
+        </div>
+        
+        <button onclick="logActivity()">Log Activity & Update Context</button>
+        
+        <div id="status"></div>
+        
+        <details style="margin-top: 20px;">
+            <summary>Recent Activities</summary>
+            <div id="recentActivities"></div>
+        </details>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        let supabase;
+        let selectedProject = 'FlowState';
+        let startTime = null;
+        let timerInterval = null;
+        
+        // Initialize on load
+        window.onload = function() {
+            const savedKey = localStorage.getItem('flowstate_service_key');
+            if (savedKey) {
+                document.getElementById('serviceKey').value = savedKey;
+                initSupabase(savedKey);
+            } else {
+                document.getElementById('serviceKey').parentElement.style.display = 'block';
+            }
+            
+            // Set default description
+            document.getElementById('description').value = 'Discussing FlowState embeddings and AI context detection with Claude';
+            
+            // Auto-select FlowState
+            selectProject('FlowState');
+            
+            // Load recent activities
+            if (supabase) loadRecentActivities();
+        };
+        
+        function saveKey() {
+            const key = document.getElementById('serviceKey').value;
+            localStorage.setItem('flowstate_service_key', key);
+            initSupabase(key);
+            document.getElementById('serviceKey').parentElement.style.display = 'none';
+        }
+        
+        function initSupabase(key) {
+            supabase = window.supabase.createClient(SUPABASE_URL, key);
+            loadRecentActivities();
+        }
+        
+        function selectProject(project) {
+            selectedProject = project;
+            document.querySelectorAll('.quick-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function toggleTimer() {
+            const button = document.getElementById('timerButton');
+            const timerDiv = document.querySelector('.timer');
+            
+            if (startTime === null) {
+                // Start timer
+                startTime = new Date();
+                button.textContent = 'Stop Timer';
+                timerDiv.classList.add('active');
+                
+                timerInterval = setInterval(updateTimer, 1000);
+            } else {
+                // Stop timer and log
+                clearInterval(timerInterval);
+                logActivity();
+                
+                // Reset
+                startTime = null;
+                button.textContent = 'Start Timer';
+                timerDiv.classList.remove('active');
+                document.getElementById('elapsedTime').textContent = '00:00';
+            }
+        }
+        
+        function updateTimer() {
+            if (startTime) {
+                const elapsed = Math.floor((new Date() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('elapsedTime').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        async function logActivity() {
+            if (!supabase) {
+                showStatus('Please save your service key first', 'error');
+                return;
+            }
+            
+            const description = document.getElementById('description').value;
+            const activityType = document.getElementById('activityType').value;
+            
+            if (!description) {
+                showStatus('Please describe what you\'re working on', 'error');
+                return;
+            }
+            
+            try {
+                // Log the activity
+                const { error: activityError } = await supabase
+                    .from('activities')
+                    .insert({
+                        description: description,
+                        activity_type: activityType,
+                        project_name: selectedProject,
+                        user_id: 'neo_todak',
+                        created_at: new Date().toISOString()
+                    });
+                
+                if (activityError) throw activityError;
+                
+                // Update current context
+                const { error: contextError } = await supabase
+                    .from('current_context')
+                    .upsert({
+                        user_id: 'neo_todak',
+                        project_name: selectedProject,
+                        current_task: description,
+                        current_phase: activityType === 'coding' ? 'Development' : 'Planning',
+                        last_updated: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id'
+                    });
+                
+                if (contextError) throw contextError;
+                
+                showStatus('✅ Activity logged and context updated!', 'success');
+                
+                // Clear form
+                document.getElementById('description').value = '';
+                
+                // Reload activities
+                loadRecentActivities();
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadRecentActivities() {
+            if (!supabase) return;
+            
+            try {
+                const { data, error } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                const html = data.map(a => `
+                    <div style="padding: 10px; background: #f5f5f5; margin: 5px 0; border-radius: 5px;">
+                        <strong>${a.project_name}</strong> - ${a.activity_type}<br>
+                        ${a.description}<br>
+                        <small>${new Date(a.created_at).toLocaleString()}</small>
+                    </div>
+                `).join('');
+                
+                document.getElementById('recentActivities').innerHTML = html || 'No recent activities';
+                
+            } catch (error) {
+                console.error('Error loading activities:', error);
+            }
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.textContent = message;
+            setTimeout(() => status.textContent = '', 5000);
+        }
+        
+        // Auto-save context every 5 minutes if timer is running
+        setInterval(() => {
+            if (startTime !== null) {
+                logActivity();
+            }
+        }, 300000); // 5 minutes
+    </script>
+</body>
+</html>

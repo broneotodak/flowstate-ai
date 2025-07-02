@@ -1,0 +1,3146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState AI - Real-time Project Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%237dd4f0'/><text x='16' y='24' text-anchor='middle' font-size='24' fill='white'>🌊</text></svg>">
+    
+    <!-- Supabase Client - Latest v2 with Realtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* MUI-Style Pastel Blue Theme Variables */
+        :root {
+            /* Pastel Blue Primary Palette */
+            --primary-lighter: #c8dcfa;
+            --primary-light: #a5c3f5;
+            --primary: #7da3f0;
+            --primary-dark: #5b87de;
+            
+            /* Complementary Pastels */
+            --secondary: #f0a3d1;
+            --accent-lavender: #c3a3f0;
+            --accent-mint: #a3f0d1;
+            --accent-peach: #ffc3a3;
+            --accent-yellow: #f0e3a3;
+            
+            /* Background & Surface Colors */
+            --bg-primary: #fafbff;
+            --bg-secondary: #f0f4ff;
+            --bg-paper: #ffffff;
+            --bg-elevation-1: #ffffff;
+            --bg-elevation-2: #fafbff;
+            
+            /* Text Colors */
+            --text-primary: #2d3561;
+            --text-secondary: #5d6494;
+            --text-disabled: #9ca3d4;
+            
+            /* UI Elements */
+            --divider: #e1e8ff;
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+            
+            /* Status Colors (Pastel) */
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --success: #10b981;
+            
+            /* Gradients */
+            --gradient-primary: linear-gradient(135deg, #a5c3f5 0%, #7da3f0 100%);
+            --gradient-mixed: linear-gradient(135deg, #a5c3f5 0%, #c3a3f0 50%, #f0a3d1 100%);
+            --gradient-ocean: linear-gradient(135deg, #a3f0d1 0%, #a3d4f5 50%, #7da3f0 100%);
+            
+            /* Shadows with blue tint */
+            --shadow-sm: 0px 2px 4px -1px rgba(125, 163, 240, 0.1);
+            --shadow-md: 0px 3px 6px -2px rgba(125, 163, 240, 0.15);
+            --shadow-lg: 0px 4px 8px -2px rgba(125, 163, 240, 0.2);
+            --shadow-xl: 0px 5px 10px -2px rgba(125, 163, 240, 0.25);
+            
+            /* Transitions */
+            --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Dark Theme */
+        [data-theme="dark"] {
+            --primary-lighter: #9db8f5;
+            --primary-light: #7da3f0;
+            --primary: #5b87de;
+            --primary-dark: #4a6fbf;
+            
+            --secondary: #de5b9f;
+            --accent-lavender: #9f5bde;
+            --accent-mint: #5bde9f;
+            --accent-peach: #de9f5b;
+            --accent-yellow: #ded15b;
+            
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-paper: #242424;
+            --bg-elevation-1: #2a2a2a;
+            --bg-elevation-2: #333333;
+            
+            --text-primary: #e4e4e4;
+            --text-secondary: #a0a0a0;
+            --text-disabled: #666666;
+            
+            --divider: #404040;
+            
+            --shadow-sm: 0px 2px 4px -1px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0px 3px 6px -2px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0px 4px 8px -2px rgba(0, 0, 0, 0.5);
+            --shadow-xl: 0px 5px 10px -2px rgba(0, 0, 0, 0.6);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: var(--transition-base);
+        }
+
+        /* Animated Gradient Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            opacity: 0.5;
+            background: var(--gradient-mixed);
+        }
+        
+        [data-theme="dark"] .bg-animation {
+            opacity: 0.05;
+            background: none;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 20% 50%, var(--primary-lighter) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, var(--accent-lavender) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 20%, var(--secondary) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-30px, -20px) scale(1.1); }
+            66% { transform: translate(30px, -10px) scale(0.9); }
+        }
+
+        /* MUI-Style App Bar */
+        .app-bar {
+            background: var(--bg-paper);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--divider);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition-base);
+        }
+
+        .app-bar-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 1.75rem;
+            font-weight: 500;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.02em;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Semantic Search Bar */
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+            margin: 0 2rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            background: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            transition: var(--transition-base);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: var(--bg-paper);
+            box-shadow: var(--shadow-md);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            pointer-events: none;
+        }
+
+        .search-shortcut {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--divider);
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* Search Results Dropdown */
+        .search-results {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            left: 0;
+            right: 0;
+            background: var(--bg-paper);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+        }
+
+        .search-results.active {
+            display: block;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--divider);
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+
+        .search-result-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .search-result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .search-result-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .search-result-similarity {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .search-result-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .search-result-description {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .search-result-meta {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Embedding Status Badge */
+        .embedding-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+
+        .embedding-status:hover {
+            background: var(--bg-elevation-1);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .embedding-status .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* Embedding Stats Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-paper);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition-base);
+            color: var(--text-secondary);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-card-title {
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .stat-card-percentage {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-progress {
+            height: 8px;
+            background: var(--divider);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .stat-progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 1s ease;
+        }
+
+        .stat-details {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* MUI-Style Icon Button */
+        .icon-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition-base);
+            color: var(--text-primary);
+        }
+
+        .icon-button:hover {
+            background: var(--primary-lighter);
+        }
+        
+        [data-theme="dark"] .icon-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .icon-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Connection Chip */
+        .connection-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+            border-radius: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: var(--transition-base);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .connection-chip.connecting {
+            border-color: var(--warning);
+            color: var(--warning);
+        }
+
+        .connection-chip.offline {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        /* MUI-Style Paper/Card */
+        .paper {
+            background: var(--bg-paper);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition-base);
+        }
+
+        .paper-elevated {
+            box-shadow: var(--shadow-lg);
+        }
+
+        .paper:hover {
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* Current Context Card */
+        .context-card {
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--primary-light);
+        }
+
+        .context-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-primary);
+        }
+
+        .context-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .context-header h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            cursor: pointer;
+            transition: var(--transition-base);
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* AI Confidence Badge */
+        .ai-confidence {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .ai-confidence.high {
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .ai-confidence.medium {
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .ai-confidence.low {
+            border: 2px solid var(--error);
+            color: var(--error);
+        }
+
+        /* Live Badge */
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .live-badge .status-dot {
+            background: currentColor;
+        }
+
+        /* Context Grid */
+        .context-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .context-item {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition-base);
+        }
+
+        .context-item:hover {
+            background: var(--bg-elevation-1);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .context-item h3 {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .context-item p {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .context-item .emoji {
+            font-size: 1.5rem;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .progress-header h3 {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .progress-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* Animated Progress Bar */
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--divider);
+            border-radius: 5px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.4),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Project Grid */
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        /* Project Card */
+        .project-card {
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 1px solid transparent;
+            transform-origin: center top;
+        }
+
+        .project-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary-light);
+        }
+
+        .project-card.active {
+            border-color: var(--primary);
+            background: var(--bg-elevation-1);
+        }
+
+        .project-card.expanded {
+            grid-column: 1 / -1;
+            background: var(--bg-elevation-2);
+            border: 2px solid var(--primary-light);
+            min-height: 400px; /* Ensure expanded card has minimum height */
+            scroll-margin-top: 100px; /* Account for sticky header */
+        }
+
+        .project-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .project-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .project-title .emoji {
+            font-size: 1.75rem;
+        }
+
+        .project-status {
+            padding: 0.25rem 0.75rem;
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Project Description */
+        .project-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        /* Expand Indicator */
+        .expand-indicator {
+            margin-left: auto;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            transition: var(--transition-base);
+        }
+
+        .project-card:hover .expand-indicator {
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .project-card.expanded .expand-indicator {
+            transform: rotate(90deg);
+        }
+
+        /* Project Stats */
+        .project-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            padding: 1rem 0;
+            border-top: 1px solid var(--divider);
+            border-bottom: 1px solid var(--divider);
+            margin: 1rem 0;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Team Avatars */
+        .team-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .team-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-right: 0.5rem;
+        }
+
+        .team-avatars {
+            display: flex;
+            margin-left: auto;
+        }
+
+        .team-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--bg-paper);
+            margin-left: -10px;
+            background: var(--gradient-primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-base);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .team-avatar:first-child {
+            margin-left: 0;
+        }
+
+        .team-avatar:hover {
+            transform: translateY(-2px) scale(1.1);
+            z-index: 10;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Similar Tasks Section */
+        .similar-tasks-section {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+        }
+
+        .similar-tasks-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .similar-task {
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            background: var(--bg-paper);
+            border-radius: var(--border-radius-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-base);
+            cursor: pointer;
+        }
+
+        .similar-task:hover {
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .similar-task-info {
+            flex: 1;
+        }
+
+        .similar-task-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .similar-task-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .similarity-badge {
+            padding: 0.25rem 0.5rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Activity Feed */
+        .activity-card {
+            padding: 2rem;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .activity-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition-base);
+        }
+
+        .activity-item:hover {
+            background: var(--bg-elevation-1);
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .activity-item.new {
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .activity-item.grouped {
+            background: var(--bg-elevation-1);
+            border: 1px solid var(--primary-lighter);
+        }
+
+        .activity-group-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--primary);
+        }
+
+        .activity-group-count {
+            padding: 0.125rem 0.5rem;
+            background: var(--primary-lighter);
+            color: var(--primary-dark);
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            border: 2px solid var(--divider);
+            background: var(--bg-paper);
+        }
+
+        .activity-icon.success {
+            background: var(--bg-paper);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .activity-icon.info {
+            background: var(--bg-paper);
+            border: 2px solid var(--info);
+            color: var(--info);
+        }
+
+        .activity-icon.warning {
+            background: var(--bg-paper);
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .activity-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid var(--divider);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        /* Task Section */
+        .tasks-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--divider);
+        }
+
+        .tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        /* MUI-Style Button */
+        .button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: var(--border-radius-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-base);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .button-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .button-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .button-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-bar-content,
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .search-container {
+                margin: 0 1rem;
+            }
+            
+            .context-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .project-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .project-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            /* Adjust scroll margin for mobile */
+            .project-card.expanded {
+                scroll-margin-top: 80px;
+                min-height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-animation"></div>
+    
+    <!-- App Bar -->
+    <header class="app-bar">
+        <div class="app-bar-content">
+            <div class="logo">
+                <h1>🌊 FlowState AI</h1>
+            </div>
+            
+            <!-- Semantic Search Bar -->
+            <div class="search-container">
+                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input type="text" 
+                       class="search-input" 
+                       id="semanticSearch" 
+                       placeholder="Search tasks, activities, or context..."
+                       autocomplete="off">
+                <span class="search-shortcut">⌘K</span>
+                
+                <!-- Search Results Dropdown -->
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            
+            <div class="toolbar">
+                <!-- Embedding Status -->
+                <div class="embedding-status" id="embeddingStatus" onclick="showEmbeddingStats()">
+                    <div class="status-dot"></div>
+                    <span>Embeddings: <span id="embeddingCount">...</span></span>
+                </div>
+                
+                <div class="connection-chip" id="connectionStatus">
+                    <div class="status-dot"></div>
+                    <span id="statusText">Connected</span>
+                </div>
+                <button class="icon-button" id="themeToggle" aria-label="Toggle theme">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <!-- Current Context Card with AI Confidence -->
+        <section class="paper paper-elevated context-card">
+            <div class="context-header">
+                <h2>
+                    <span class="user-avatar">NT</span>
+                    Current Context
+                </h2>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="ai-confidence high" id="aiConfidence">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                        </svg>
+                        <span>AI: <span id="confidenceValue">95%</span></span>
+                    </div>
+                    <div class="live-badge">
+                        <div class="status-dot"></div>
+                        LIVE
+                    </div>
+                </div>
+            </div>
+            <div id="currentContextContent">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tools & Machines Section -->
+        <section class="tools-machines-section">
+            <div class="section-header">
+                <h2>Active Environment</h2>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Tools Card -->
+                <div class="paper context-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--primary);">
+                        🛠️ Development Tools
+                    </h3>
+                    <div id="toolsList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="loading">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Machines Card -->
+                <div class="paper context-card" style="margin-bottom: 0;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem; color: var(--primary);">
+                        💻 Connected Machines
+                    </h3>
+                    <div id="machinesList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="loading">
+                            <div class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section class="projects-section">
+            <div class="section-header">
+                <h2>Active Projects</h2>
+            </div>
+            <div class="project-grid" id="projectGrid">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GitHub Activity -->
+        <section class="github-section" style="margin-bottom: 3rem;">
+            <div class="section-header">
+                <h2>🐙 Recent Commits</h2>
+                <button class="button button-primary" onclick="refreshGitHub()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                    Sync GitHub
+                </button>
+            </div>
+            <div id="githubCommits" style="display: grid; gap: 0.75rem;">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Time Tracking -->
+        <section class="time-tracking-section" style="margin-bottom: 3rem;">
+            <div class="section-header">
+                <h2>⏱️ Time Tracking</h2>
+                <div id="activeTimer" style="display: none; align-items: center; gap: 1rem;">
+                    <span style="font-weight: 600;">Active:</span>
+                    <span id="activeProject" style="color: var(--primary);"></span>
+                    <span id="activeTime" style="font-family: monospace; font-size: 1.125rem;">00:00</span>
+                    <button class="button" onclick="stopTimer()" style="background: var(--error); color: white;">Stop</button>
+                </div>
+            </div>
+            <div class="paper" style="padding: 1.5rem;">
+                <div id="timeTrackingSummary">
+                    <div class="loading">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Activity with Grouping -->
+        <section class="activity-section">
+            <div class="section-header">
+                <h2>Recent Activity</h2>
+                <button class="button" onclick="toggleActivityGrouping()" id="groupingToggle">
+                    Group Similar
+                </button>
+            </div>
+            <div class="paper activity-card">
+                <div id="activityFeed">
+                    <div class="loading">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Embedding Stats Modal -->
+    <div class="modal-overlay" id="embeddingStatsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Embedding Coverage Statistics</h2>
+                <button class="modal-close" onclick="hideEmbeddingStats()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="stats-grid" id="embeddingStatsContent">
+                <div class="loading">
+                    <div class="loader"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        const sunIcon = document.querySelector('.sun-icon');
+        const moonIcon = document.querySelector('.moon-icon');
+
+        // Load saved theme or default to light
+        const savedTheme = localStorage.getItem('flowstate-theme') || 'light';
+        html.setAttribute('data-theme', savedTheme);
+        updateThemeIcon(savedTheme);
+
+        function updateThemeIcon(theme) {
+            if (theme === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+
+        // Toggle theme on click
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('flowstate-theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6YW1hbXltZnpoZWx2a3dwdmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxNDMwNjgsImV4cCI6MjA2MzcxOTA2OH0.2ZKxIzgXEFFjLRlS3LlNYYKK1IuJ0CIkWKo-sMdSxlI';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            realtime: {
+                params: {
+                    eventsPerSecond: 10
+                }
+            }
+        });
+
+        // State
+        let currentContext = null;
+        let projects = {};
+        let activities = [];
+        let projectOwners = {};
+        let projectPhases = {};
+        let projectTasks = {};
+        let expandedProjects = new Set();
+        let githubCommits = [];
+        let timeTracking = [];
+        let activeSession = null;
+        let timerInterval = null;
+        let githubIntegration = null;
+        let embeddingStats = null;
+        let activityGrouping = false;
+        let searchDebounceTimer = null;
+        let contextConfidence = 0;
+
+        // Project definitions with descriptions
+        const projectDefinitions = {
+            'FlowState AI': {
+                emoji: '🌊',
+                description: 'Real-time project dashboard with live updates and task management',
+                color: '#7dd4f0'
+            },
+            'ClaudeN': {
+                emoji: '💜',
+                description: 'AI partnership system for enhanced productivity and memory management',
+                color: '#c37df0'
+            },
+            'ARS': {
+                emoji: '🤖',
+                description: 'AI Recruitment System - Automated candidate screening and matching',
+                color: '#7da3f0'
+            },
+            'THR': {
+                emoji: '💼',
+                description: 'Employee data migration and management system',
+                color: '#a3f5c3'
+            },
+            'TODAK': {
+                emoji: '💬',
+                description: 'WhatsApp Bot system for automated customer interactions',
+                color: '#f5d4a3'
+            },
+            'ATLAS': {
+                emoji: '📦',
+                description: 'Asset Tracking System for inventory and equipment management',
+                color: '#f0a3d1'
+            },
+            'Mastra': {
+                emoji: '🎮',
+                description: 'Game development project - Currently in Open Beta phase',
+                color: '#c3a3f0'
+            },
+            'MLBB Esports App': {
+                emoji: '📱',
+                description: 'Mobile esports application for tournament management',
+                color: '#a3d4f5'
+            },
+            'Kenal': {
+                emoji: '🏢',
+                description: 'Admin Access Management Platform for enterprise security',
+                color: '#a3f0d1'
+            },
+            'Firasah': {
+                emoji: '🔮',
+                description: 'AI-powered facial analysis and recognition system',
+                color: '#e3a3f0'
+            }
+        };
+
+        // Initialize dashboard
+        async function init() {
+            console.log('🚀 Initializing FlowState AI Dashboard with Embeddings...');
+            
+            await checkConnection();
+            
+            // Load initial data
+            await Promise.all([
+                loadCurrentContext(),
+                loadProjectOwners(),
+                loadProjectPhases(),
+                loadTasks(),
+                loadProjects(),
+                loadActivities(),
+                loadTools(),
+                loadMachines(),
+                loadGitHubCommits(),
+                loadTimeTracking(),
+                loadEmbeddingStats()
+            ]);
+            
+            // Setup realtime subscriptions
+            setupRealtimeSubscriptions();
+            
+            // Start timestamp heartbeat
+            startTimestampHeartbeat();
+            
+            // Setup search functionality
+            setupSearch();
+            
+            // Detect context from recent activities
+            detectCurrentContext();
+            
+            console.log('✅ Dashboard initialized with embedding support');
+        }
+
+        // Setup search functionality
+        function setupSearch() {
+            const searchInput = document.getElementById('semanticSearch');
+            const searchResults = document.getElementById('searchResults');
+            
+            // Search on input
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchDebounceTimer);
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    searchResults.classList.remove('active');
+                    return;
+                }
+                
+                searchDebounceTimer = setTimeout(() => {
+                    performSemanticSearch(query);
+                }, 300);
+            });
+            
+            // Hide results on click outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.search-container')) {
+                    searchResults.classList.remove('active');
+                }
+            });
+            
+            // Keyboard shortcut (Cmd/Ctrl + K)
+            document.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
+                }
+            });
+        }
+
+        // Perform semantic search
+        async function performSemanticSearch(query) {
+            const searchResults = document.getElementById('searchResults');
+            
+            try {
+                // First, generate embedding for the query
+                // For demo, we'll use a mock embedding
+                const mockEmbedding = new Array(1536).fill(0).map(() => Math.random());
+                
+                // Search using RPC function
+                const { data, error } = await supabase
+                    .rpc('search_flowstate_items', {
+                        query_embedding: mockEmbedding,
+                        match_threshold: 0.7,
+                        match_count: 10,
+                        search_type: 'all'
+                    });
+                
+                if (error) {
+                    console.error('Search error:', error);
+                    // Fallback to basic search
+                    performBasicSearch(query);
+                    return;
+                }
+                
+                renderSearchResults(data || []);
+                
+            } catch (error) {
+                console.error('Search failed:', error);
+                // Fallback to basic search
+                performBasicSearch(query);
+            }
+        }
+
+        // Basic search fallback
+        function performBasicSearch(query) {
+            const searchResults = document.getElementById('searchResults');
+            const results = [];
+            const queryLower = query.toLowerCase();
+            
+            // Search tasks
+            Object.values(projectTasks).flat().forEach(task => {
+                if (task.title.toLowerCase().includes(queryLower) ||
+                    (task.description && task.description.toLowerCase().includes(queryLower))) {
+                    results.push({
+                        item_type: 'task',
+                        name: task.title,
+                        description: task.description,
+                        project_name: task.project,
+                        similarity: 0.8,
+                        metadata: { status: task.status, priority: task.priority }
+                    });
+                }
+            });
+            
+            // Search activities
+            activities.forEach(activity => {
+                if (activity.activity_description.toLowerCase().includes(queryLower)) {
+                    results.push({
+                        item_type: 'activity',
+                        name: activity.activity_description,
+                        project_name: activity.project_name,
+                        similarity: 0.7,
+                        metadata: { activity_type: activity.activity_type },
+                        created_at: activity.created_at
+                    });
+                }
+            });
+            
+            renderSearchResults(results.slice(0, 10));
+        }
+
+        // Render search results
+        function renderSearchResults(results) {
+            const searchResults = document.getElementById('searchResults');
+            
+            if (results.length === 0) {
+                searchResults.innerHTML = '<div class="empty-state">No results found</div>';
+                searchResults.classList.add('active');
+                return;
+            }
+            
+            const resultsHtml = results.map(result => {
+                const typeEmoji = {
+                    'task': '📋',
+                    'subtask': '📌',
+                    'activity': '⚡',
+                    'context': '🎯',
+                    'phase': '📊'
+                }[result.item_type] || '📄';
+                
+                return `
+                    <div class="search-result-item" onclick="handleSearchResultClick('${result.item_type}', '${result.item_id || ''}')">
+                        <div class="search-result-header">
+                            <span class="search-result-type">
+                                ${typeEmoji} ${result.item_type}
+                            </span>
+                            ${result.similarity ? `
+                                <span class="search-result-similarity">
+                                    ${Math.round(result.similarity * 100)}% match
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div class="search-result-title">${result.name}</div>
+                        ${result.description ? `
+                            <div class="search-result-description">${result.description}</div>
+                        ` : ''}
+                        <div class="search-result-meta">
+                            <span>${result.project_name}</span>
+                            ${result.created_at ? `
+                                <span>• ${formatTime(result.created_at)}</span>
+                            ` : ''}
+                            ${result.metadata?.status ? `
+                                <span>• ${result.metadata.status}</span>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            searchResults.innerHTML = resultsHtml;
+            searchResults.classList.add('active');
+        }
+
+        // Handle search result click
+        function handleSearchResultClick(itemType, itemId) {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.classList.remove('active');
+            
+            // Clear search
+            document.getElementById('semanticSearch').value = '';
+            
+            // Navigate based on item type
+            if (itemType === 'task' || itemType === 'subtask') {
+                // Find and expand the project containing this task
+                for (const [projectName, tasks] of Object.entries(projectTasks)) {
+                    if (tasks.some(t => t.id === itemId)) {
+                        toggleProjectExpansion(projectName);
+                        break;
+                    }
+                }
+            } else if (itemType === 'activity') {
+                // Scroll to activity feed
+                document.querySelector('.activity-section').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Load embedding statistics
+        async function loadEmbeddingStats() {
+            try {
+                const { data, error } = await supabase
+                    .rpc('get_embedding_stats');
+                
+                if (data) {
+                    embeddingStats = data;
+                    updateEmbeddingCount();
+                }
+            } catch (error) {
+                console.error('Error loading embedding stats:', error);
+            }
+        }
+
+        // Update embedding count display
+        function updateEmbeddingCount() {
+            if (!embeddingStats) return;
+            
+            const totalEmbedded = embeddingStats.reduce((sum, stat) => sum + (stat.embedded_count || 0), 0);
+            const totalItems = embeddingStats.reduce((sum, stat) => sum + (stat.total_count || 0), 0);
+            
+            document.getElementById('embeddingCount').textContent = `${totalEmbedded}/${totalItems}`;
+        }
+
+        // Show embedding stats modal
+        function showEmbeddingStats() {
+            const modal = document.getElementById('embeddingStatsModal');
+            modal.classList.add('active');
+            
+            if (!embeddingStats) {
+                loadEmbeddingStats().then(() => renderEmbeddingStats());
+            } else {
+                renderEmbeddingStats();
+            }
+        }
+
+        // Hide embedding stats modal
+        function hideEmbeddingStats() {
+            const modal = document.getElementById('embeddingStatsModal');
+            modal.classList.remove('active');
+        }
+
+        // Render embedding stats
+        function renderEmbeddingStats() {
+            const content = document.getElementById('embeddingStatsContent');
+            
+            if (!embeddingStats) {
+                content.innerHTML = '<div class="empty-state">No statistics available</div>';
+                return;
+            }
+            
+            const statsHtml = embeddingStats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-card-header">
+                        <span class="stat-card-title">${stat.table_name}</span>
+                        <span class="stat-card-percentage">${stat.coverage_percentage}%</span>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-progress-fill" style="width: ${stat.coverage_percentage}%"></div>
+                    </div>
+                    <div class="stat-details">
+                        <span>${stat.embedded_count} embedded</span>
+                        <span>${stat.total_count} total</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            content.innerHTML = statsHtml;
+        }
+
+        // Detect current context from activities
+        async function detectCurrentContext() {
+            try {
+                const { data, error } = await supabase
+                    .rpc('detect_context_from_activities', {
+                        user_id_input: 'neo_todak',
+                        time_window: '30 minutes'
+                    });
+                
+                if (data && data.length > 0) {
+                    const suggestion = data[0];
+                    contextConfidence = Math.round(suggestion.confidence * 100);
+                    updateContextConfidence(contextConfidence);
+                }
+            } catch (error) {
+                console.error('Error detecting context:', error);
+            }
+        }
+
+        // Update context confidence display
+        function updateContextConfidence(confidence) {
+            const badge = document.getElementById('aiConfidence');
+            const value = document.getElementById('confidenceValue');
+            
+            value.textContent = `${confidence}%`;
+            
+            // Update badge style based on confidence
+            badge.classList.remove('high', 'medium', 'low');
+            if (confidence >= 80) {
+                badge.classList.add('high');
+            } else if (confidence >= 60) {
+                badge.classList.add('medium');
+            } else {
+                badge.classList.add('low');
+            }
+        }
+
+        // Toggle activity grouping
+        async function toggleActivityGrouping() {
+            activityGrouping = !activityGrouping;
+            const button = document.getElementById('groupingToggle');
+            button.textContent = activityGrouping ? 'Show All' : 'Group Similar';
+            
+            if (activityGrouping) {
+                loadGroupedActivities();
+            } else {
+                renderActivities();
+            }
+        }
+
+        // Load grouped activities
+        async function loadGroupedActivities() {
+            try {
+                const { data, error } = await supabase
+                    .rpc('group_similar_activities', {
+                        user_id_input: 'neo_todak',
+                        time_window: '24 hours',
+                        similarity_threshold: 0.85
+                    });
+                
+                if (data) {
+                    renderGroupedActivities(data);
+                }
+            } catch (error) {
+                console.error('Error loading grouped activities:', error);
+                renderActivities(); // Fallback to regular view
+            }
+        }
+
+        // Render grouped activities
+        function renderGroupedActivities(groups) {
+            const feed = document.getElementById('activityFeed');
+            
+            const groupedHtml = groups.map(group => {
+                const activities = group.activities;
+                const firstActivity = activities[0];
+                
+                let icon = '📌';
+                let iconClass = 'info';
+                
+                // Determine icon based on type
+                switch(group.group_type) {
+                    case 'deployment':
+                        icon = '🚀';
+                        iconClass = 'success';
+                        break;
+                    case 'bug_fix':
+                        icon = '🐛';
+                        iconClass = 'warning';
+                        break;
+                    case 'documentation':
+                        icon = '📝';
+                        break;
+                }
+                
+                return `
+                    <div class="activity-item grouped">
+                        <div class="activity-icon ${iconClass}">
+                            ${icon}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-group-header">
+                                <span>${group.group_project}</span>
+                                <span class="activity-group-count">${group.activity_count} similar activities</span>
+                            </div>
+                            ${activities.slice(0, 3).map(activity => `
+                                <div class="activity-title">${activity.description}</div>
+                                <div class="activity-meta">${formatTime(activity.created_at)}</div>
+                            `).join('')}
+                            ${activities.length > 3 ? `
+                                <div class="activity-meta">... and ${activities.length - 3} more</div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            feed.innerHTML = groupedHtml || '<div class="empty-state">No grouped activities</div>';
+        }
+
+        // Find similar tasks for a project
+        async function findSimilarTasks(taskId) {
+            try {
+                const { data, error } = await supabase
+                    .rpc('find_similar_tasks', {
+                        task_id: taskId,
+                        match_threshold: 0.75,
+                        match_count: 5
+                    });
+                
+                return data || [];
+            } catch (error) {
+                console.error('Error finding similar tasks:', error);
+                return [];
+            }
+        }
+
+        // Render similar tasks section
+        function renderSimilarTasks(tasks) {
+            if (!tasks || tasks.length === 0) return '';
+            
+            return `
+                <div class="similar-tasks-section">
+                    <div class="similar-tasks-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                        </svg>
+                        Similar Tasks Found
+                    </div>
+                    ${tasks.map(task => `
+                        <div class="similar-task">
+                            <div class="similar-task-info">
+                                <div class="similar-task-title">${task.title}</div>
+                                <div class="similar-task-meta">
+                                    ${task.project} • ${task.status}
+                                </div>
+                            </div>
+                            <span class="similarity-badge">
+                                ${Math.round(task.similarity * 100)}%
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // Setup realtime subscriptions
+        function setupRealtimeSubscriptions() {
+            // Subscribe to current_context changes
+            supabase
+                .channel('current_context_channel')
+                .on('postgres_changes', 
+                    { 
+                        event: '*', 
+                        schema: 'public', 
+                        table: 'current_context',
+                        filter: 'user_id=eq.neo_todak'
+                    }, 
+                    handleContextChange
+                )
+                .subscribe();
+
+            // Subscribe to activity_log changes
+            supabase
+                .channel('activity_log_channel')
+                .on('postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'activity_log',
+                        filter: 'user_id=eq.neo_todak'
+                    },
+                    handleActivityChange
+                )
+                .subscribe();
+
+            // Subscribe to tasks changes
+            supabase
+                .channel('tasks_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'tasks'
+                    },
+                    handleTasksChange
+                )
+                .subscribe();
+
+            // Subscribe to tools changes
+            supabase
+                .channel('tools_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'user_tools',
+                        filter: 'user_id=eq.neo_todak'
+                    },
+                    handleToolsChange
+                )
+                .subscribe();
+
+            // Subscribe to machines changes
+            supabase
+                .channel('machines_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'user_machines',
+                        filter: 'user_id=eq.neo_todak'
+                    },
+                    handleMachinesChange
+                )
+                .subscribe();
+                
+            // Subscribe to context_embeddings changes for stats
+            supabase
+                .channel('embeddings_channel')
+                .on('postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'context_embeddings'
+                    },
+                    handleEmbeddingChange
+                )
+                .subscribe();
+        }
+
+        // Handle realtime changes
+        function handleContextChange(payload) {
+            console.log('📡 Context change:', payload);
+            loadCurrentContext();
+            loadProjects(); // Refresh to update active indicator
+            detectCurrentContext(); // Re-detect AI confidence
+        }
+
+        function handleActivityChange(payload) {
+            console.log('📡 Activity change:', payload);
+            loadActivities();
+            detectCurrentContext(); // Update context detection
+        }
+
+        function handleTasksChange(payload) {
+            console.log('📡 Tasks change:', payload);
+            loadTasks();
+            loadProjects();
+            loadEmbeddingStats(); // Update stats
+        }
+
+        function handleToolsChange(payload) {
+            console.log('📡 Tools change:', payload);
+            loadTools();
+        }
+
+        function handleMachinesChange(payload) {
+            console.log('📡 Machines change:', payload);
+            loadMachines();
+        }
+
+        function handleEmbeddingChange(payload) {
+            console.log('📡 Embedding change:', payload);
+            loadEmbeddingStats();
+        }
+
+        // Check connection
+        async function checkConnection() {
+            try {
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .select('id')
+                    .limit(1);
+                
+                updateConnectionStatus(true);
+            } catch (error) {
+                updateConnectionStatus(false);
+            }
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            const textEl = document.getElementById('statusText');
+            
+            if (connected) {
+                statusEl.classList.remove('connecting', 'offline');
+                textEl.textContent = 'Connected';
+            } else {
+                statusEl.classList.add('offline');
+                textEl.textContent = 'Offline';
+            }
+        }
+
+        // Load current context
+        async function loadCurrentContext() {
+            try {
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .single();
+                
+                if (data) {
+                    currentContext = data;
+                    renderCurrentContext(data);
+                }
+            } catch (error) {
+                console.error('Error loading context:', error);
+            }
+        }
+
+        // Render current context
+        function renderCurrentContext(context) {
+            const projectDef = projectDefinitions[context.project_name] || {};
+            
+            const content = `
+                <div class="context-grid">
+                    <div class="context-item">
+                        <h3>Current Project</h3>
+                        <p><span class="emoji">${projectDef.emoji || '📁'}</span>${context.project_name}</p>
+                    </div>
+                    <div class="context-item">
+                        <h3>Working On</h3>
+                        <p>${context.current_task || 'General development'}</p>
+                    </div>
+                    <div class="context-item">
+                        <h3>Phase</h3>
+                        <p>${context.current_phase || 'Active'}</p>
+                    </div>
+                    <div class="context-item">
+                        <h3>Last Updated</h3>
+                        <p>${formatTime(context.last_updated)}</p>
+                    </div>
+                </div>
+                ${context.progress_percentage > 0 ? `
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <h3>Overall Progress</h3>
+                        <span class="progress-value">${context.progress_percentage}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${context.progress_percentage}%"></div>
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('currentContextContent').innerHTML = content;
+        }
+
+        // Load project owners
+        async function loadProjectOwners() {
+            try {
+                const { data, error } = await supabase
+                    .from('project_owners')
+                    .select('*')
+                    .eq('user_id', 'neo_todak');
+                
+                if (data) {
+                    projectOwners = {};
+                    data.forEach(owner => {
+                        if (!projectOwners[owner.project_name]) {
+                            projectOwners[owner.project_name] = [];
+                        }
+                        projectOwners[owner.project_name].push(owner);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading owners:', error);
+            }
+        }
+
+        // Load project phases
+        async function loadProjectPhases() {
+            try {
+                const { data, error } = await supabase
+                    .from('project_phases')
+                    .select('*')
+                    .order('project_name', { ascending: true })
+                    .order('phase_order', { ascending: true });
+                
+                if (data) {
+                    projectPhases = {};
+                    data.forEach(phase => {
+                        if (!projectPhases[phase.project_name]) {
+                            projectPhases[phase.project_name] = [];
+                        }
+                        projectPhases[phase.project_name].push(phase);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading phases:', error);
+            }
+        }
+
+        // Load tasks
+        async function loadTasks() {
+            try {
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (data) {
+                    projectTasks = {};
+                    data.forEach(task => {
+                        if (!projectTasks[task.project]) {
+                            projectTasks[task.project] = [];
+                        }
+                        projectTasks[task.project].push(task);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        // Load projects
+        async function loadProjects() {
+            try {
+                // Load project status data
+                const { data: statusData, error: statusError } = await supabase
+                    .from('project_status')
+                    .select('*')
+                    .order('progress_percentage', { ascending: false });
+                
+                // Load tasks data
+                const { data: tasks, error: tasksError } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (statusData || tasks) {
+                    projects = {};
+                    
+                    // First, populate from project_status table
+                    if (statusData) {
+                        statusData.forEach(status => {
+                            projects[status.project_name] = {
+                                name: status.project_name,
+                                status: status.status,
+                                progress: status.progress_percentage,
+                                description: status.description,
+                                deploymentUrl: status.deployment_url,
+                                lastMilestone: status.last_milestone,
+                                totalTasks: 0,
+                                completedTasks: 0,
+                                inProgressTasks: 0
+                            };
+                        });
+                    }
+                    
+                    // Then, add task counts
+                    if (tasks) {
+                        tasks.forEach(task => {
+                            if (!projects[task.project]) {
+                                projects[task.project] = {
+                                    name: task.project,
+                                    status: 'active',
+                                    progress: 0,
+                                    totalTasks: 0,
+                                    completedTasks: 0,
+                                    inProgressTasks: 0
+                                };
+                            }
+                            
+                            projects[task.project].totalTasks++;
+                            if (task.status === 'complete') {
+                                projects[task.project].completedTasks++;
+                            } else if (task.status === 'in_progress') {
+                                projects[task.project].inProgressTasks++;
+                            }
+                        });
+                    }
+                    
+                    renderProjects();
+                } else {
+                    renderDefaultProjects();
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                renderDefaultProjects();
+            }
+        }
+
+        // Toggle project expansion
+        function toggleProjectExpansion(projectName) {
+            if (expandedProjects.has(projectName)) {
+                expandedProjects.delete(projectName);
+            } else {
+                expandedProjects.add(projectName);
+            }
+            renderProjects();
+            
+            // Scroll to expanded card after rendering
+            if (expandedProjects.has(projectName)) {
+                setTimeout(() => {
+                    scrollToExpandedCard(projectName);
+                }, 100); // Small delay to ensure DOM is updated
+            }
+        }
+        
+        // Scroll to expanded card
+        function scrollToExpandedCard(projectName) {
+            const projectCards = document.querySelectorAll('.project-card');
+            let targetCard = null;
+            
+            // Find the expanded card by checking its content
+            projectCards.forEach(card => {
+                const titleElement = card.querySelector('.project-title span:nth-child(2)');
+                if (titleElement && titleElement.textContent === projectName) {
+                    targetCard = card;
+                }
+            });
+            
+            if (targetCard) {
+                // Calculate the position to scroll to
+                const headerHeight = document.querySelector('.app-bar').offsetHeight;
+                const cardRect = targetCard.getBoundingClientRect();
+                const scrollTop = window.pageYOffset + cardRect.top - headerHeight - 20; // 20px padding
+                
+                // Smooth scroll to the card
+                window.scrollTo({
+                    top: scrollTop,
+                    behavior: 'smooth'
+                });
+                
+                // Add a highlight effect
+                targetCard.style.transition = 'box-shadow 0.3s ease';
+                targetCard.style.boxShadow = '0 0 0 3px var(--primary)';
+                
+                // Remove highlight after animation
+                setTimeout(() => {
+                    targetCard.style.boxShadow = '';
+                }, 1500);
+            }
+        }
+
+        // Handle project click
+        function handleProjectClick(event, projectName) {
+            const target = event.target;
+            const isButton = target.closest('button');
+            
+            if (!isButton) {
+                toggleProjectExpansion(projectName);
+            }
+        }
+
+        // Render projects
+        async function renderProjects() {
+            const projectGrid = document.getElementById('projectGrid');
+            const projectNames = Object.keys(projectDefinitions);
+            
+            const projectCards = await Promise.all(projectNames.map(async (projectName) => {
+                const project = projects[projectName] || { totalTasks: 0, completedTasks: 0, inProgressTasks: 0 };
+                const projectDef = projectDefinitions[projectName];
+                const isActive = currentContext && currentContext.project_name === projectName;
+                const isExpanded = expandedProjects.has(projectName);
+                const phases = projectPhases[projectName] || [];
+                const owners = projectOwners[projectName] || [];
+                const tasks = projectTasks[projectName] || [];
+                
+                const progress = project.progress !== undefined 
+                    ? project.progress 
+                    : (project.totalTasks > 0 
+                        ? Math.round((project.completedTasks / project.totalTasks) * 100) 
+                        : 0);
+                
+                // Find similar tasks if expanded
+                let similarTasksHtml = '';
+                if (isExpanded && tasks.length > 0) {
+                    const latestTask = tasks[0];
+                    const similarTasks = await findSimilarTasks(latestTask.id);
+                    similarTasksHtml = renderSimilarTasks(similarTasks);
+                }
+                
+                return `
+                    <div class="paper project-card ${isActive ? 'active' : ''} ${isExpanded ? 'expanded' : ''}" 
+                         onclick="handleProjectClick(event, '${projectName}')">
+                        <div class="project-header">
+                            <div class="project-title">
+                                <span class="emoji">${projectDef.emoji}</span>
+                                <span>${projectName}</span>
+                                <span class="expand-indicator">▸</span>
+                            </div>
+                            ${project.status ? `<span class="project-status" style="border-color: ${getStatusColor(project.status)}; color: ${getStatusColor(project.status)};">${project.status.toUpperCase()}</span>` : ''}
+                        </div>
+                        
+                        <p class="project-description">${project.description || projectDef.description}</p>
+                        ${project.lastMilestone ? `<p style="font-size: 0.875rem; color: var(--primary); margin-top: 0.5rem;">✓ ${project.lastMilestone}</p>` : ''}
+                        
+                        <!-- Time Tracking Button -->
+                        <div style="margin: 1rem 0;">
+                            ${activeSession && activeSession.project_name === projectName ? 
+                                `<button class="button" style="background: var(--error); color: white;" onclick="event.stopPropagation(); stopTimer();">
+                                    ⏸️ Stop Timer
+                                </button>` :
+                                `<button class="button button-primary" onclick="event.stopPropagation(); startTimer('${projectName}');">
+                                    ▶️ Start Timer
+                                </button>`
+                            }
+                        </div>
+                        
+                        ${owners.length > 0 ? `
+                        <div class="team-section">
+                            <span class="team-label">Team:</span>
+                            <div class="team-avatars">
+                                ${owners.slice(0, 3).map(owner => `
+                                    <div class="team-avatar" title="${owner.user_name || owner.user_id} - ${owner.role}">
+                                        ${(owner.user_name || owner.user_id || 'U').split(' ').map(n => n[0]).join('').toUpperCase()}
+                                    </div>
+                                `).join('')}
+                                ${owners.length > 3 ? `
+                                    <div class="team-avatar">+${owners.length - 3}</div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div class="project-stats">
+                            <div class="stat">
+                                <div class="stat-value">${phases.length}</div>
+                                <div class="stat-label">Phases</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${tasks.length}</div>
+                                <div class="stat-label">Tasks</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${project.inProgressTasks}</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">${progress}%</div>
+                                <div class="stat-label">Done</div>
+                            </div>
+                        </div>
+                        
+                        ${isExpanded && tasks.length > 0 ? `
+                        <div class="tasks-section">
+                            <div class="tasks-header">
+                                <h3>Recent Tasks</h3>
+                                <button class="button button-primary">+ Add Task</button>
+                            </div>
+                            <div class="task-list">
+                                ${tasks.slice(0, 3).map(task => `
+                                    <div class="activity-item">
+                                        <div class="activity-icon ${task.status === 'complete' ? 'success' : 'info'}">
+                                            ${task.status === 'complete' ? '✓' : '○'}
+                                        </div>
+                                        <div class="activity-content">
+                                            <div class="activity-title">${task.title}</div>
+                                            <div class="activity-meta">
+                                                ${task.priority ? `Priority: ${task.priority}` : ''}
+                                                ${task.due_date ? ` • Due: ${formatDate(task.due_date)}` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            ${similarTasksHtml}
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }));
+            
+            projectGrid.innerHTML = projectCards.join('');
+        }
+
+        // Render default projects
+        function renderDefaultProjects() {
+            const projectGrid = document.getElementById('projectGrid');
+            const defaultProjects = Object.keys(projectDefinitions).map(name => {
+                const def = projectDefinitions[name];
+                return `
+                    <div class="paper project-card">
+                        <div class="project-header">
+                            <div class="project-title">
+                                <span class="emoji">${def.emoji}</span>
+                                <span>${name}</span>
+                            </div>
+                        </div>
+                        <p class="project-description">${def.description}</p>
+                        <div class="project-stats">
+                            <div class="stat">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Tasks</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value">0%</div>
+                                <div class="stat-label">Done</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            projectGrid.innerHTML = defaultProjects;
+        }
+
+        // Load activities
+        async function loadActivities() {
+            try {
+                const { data, error } = await supabase
+                    .from('activity_log')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (data && data.length > 0) {
+                    activities = data;
+                    if (activityGrouping) {
+                        loadGroupedActivities();
+                    } else {
+                        renderActivities();
+                    }
+                } else {
+                    renderEmptyActivities();
+                }
+            } catch (error) {
+                console.error('Error loading activities:', error);
+                renderEmptyActivities();
+            }
+        }
+
+        // Render activities
+        function renderActivities() {
+            const feed = document.getElementById('activityFeed');
+            
+            const activityItems = activities.map((activity, index) => {
+                let icon = '📌';
+                let iconClass = 'info';
+                
+                switch(activity.activity_type) {
+                    case 'deployment':
+                    case 'deployment_success':
+                        icon = '🚀';
+                        iconClass = 'success';
+                        break;
+                    case 'bug_fix':
+                    case 'error_fixed':
+                        icon = '🐛';
+                        iconClass = 'warning';
+                        break;
+                    case 'documentation':
+                    case 'ui_update':
+                        icon = '📝';
+                        break;
+                    case 'context_switch':
+                        icon = '🔄';
+                        break;
+                    case 'milestone':
+                        icon = '🎯';
+                        iconClass = 'success';
+                        break;
+                    case 'solution':
+                    case 'technical_solution':
+                        icon = '💡';
+                        iconClass = 'info';
+                        break;
+                    case 'memory_save':
+                        icon = '💾';
+                        iconClass = 'info';
+                        break;
+                }
+                
+                return `
+                    <div class="activity-item ${index === 0 ? 'new' : ''}">
+                        <div class="activity-icon ${iconClass}">
+                            ${icon}
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">${activity.activity_description}</div>
+                            <div class="activity-meta">
+                                ${activity.project_name} • ${formatTime(activity.created_at)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            feed.innerHTML = activityItems;
+        }
+
+        // Render empty activities
+        function renderEmptyActivities() {
+            document.getElementById('activityFeed').innerHTML = 
+                '<div class="empty-state">No recent activity</div>';
+        }
+
+        // Load tools
+        async function loadTools() {
+            try {
+                const { data, error } = await supabase
+                    .from('user_tools')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .order('last_used', { ascending: false });
+                
+                if (data && data.length > 0) {
+                    renderTools(data);
+                } else {
+                    renderEmptyTools();
+                }
+            } catch (error) {
+                console.error('Error loading tools:', error);
+                renderEmptyTools();
+            }
+        }
+
+        // Render tools
+        function renderTools(tools) {
+            const toolsList = document.getElementById('toolsList');
+            
+            const toolItems = tools.map(tool => `
+                <div class="context-item" style="cursor: pointer; margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.5rem;">${tool.icon || '🔧'}</span>
+                            <div>
+                                <div style="font-weight: 500;">${tool.tool_name}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                    ${tool.tool_type} • Last used ${formatTime(tool.last_used)}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            toolsList.innerHTML = toolItems;
+        }
+
+        // Render empty tools
+        function renderEmptyTools() {
+            document.getElementById('toolsList').innerHTML = 
+                '<div class="empty-state">No tools configured</div>';
+        }
+
+        // Load machines
+        async function loadMachines() {
+            try {
+                const { data, error } = await supabase
+                    .from('user_machines')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .eq('is_active', true)
+                    .order('last_active', { ascending: false });
+                
+                if (data && data.length > 0) {
+                    renderMachines(data);
+                } else {
+                    renderEmptyMachines();
+                }
+            } catch (error) {
+                console.error('Error loading machines:', error);
+                renderEmptyMachines();
+            }
+        }
+
+        // Render machines
+        function renderMachines(machines) {
+            const machinesList = document.getElementById('machinesList');
+            
+            const machineItems = machines.map(machine => `
+                <div class="context-item" style="cursor: pointer; margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <span style="font-size: 1.5rem;">${machine.icon || '💻'}</span>
+                            <div>
+                                <div style="font-weight: 500;">${machine.machine_name}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                    ${machine.os} • ${machine.location} • Active ${formatTime(machine.last_active)}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></div>
+                    </div>
+                </div>
+            `).join('');
+            
+            machinesList.innerHTML = machineItems;
+        }
+
+        // Render empty machines
+        function renderEmptyMachines() {
+            document.getElementById('machinesList').innerHTML = 
+                '<div class="empty-state">No machines connected</div>';
+        }
+
+        // Load GitHub commits
+        async function loadGitHubCommits() {
+            try {
+                const { data, error } = await supabase
+                    .from('github_commits')
+                    .select('*')
+                    .order('commit_date', { ascending: false })
+                    .limit(10);
+                
+                if (data && data.length > 0) {
+                    githubCommits = data;
+                    renderGitHubCommits();
+                } else {
+                    renderEmptyGitHub();
+                }
+            } catch (error) {
+                console.error('Error loading GitHub commits:', error);
+                renderEmptyGitHub();
+            }
+        }
+
+        // Render GitHub commits
+        function renderGitHubCommits() {
+            const container = document.getElementById('githubCommits');
+            
+            const commitItems = githubCommits.map(commit => `
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: var(--bg-paper); border-color: var(--text-secondary); color: var(--text-secondary);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                        </svg>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${commit.commit_message}</div>
+                        <div class="activity-meta">
+                            ${commit.project_name} • ${commit.repo_name} • 
+                            <span style="color: var(--success);">+${commit.additions}</span> / 
+                            <span style="color: var(--error);">-${commit.deletions}</span> • 
+                            ${formatTime(commit.commit_date)}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = commitItems;
+        }
+
+        // Render empty GitHub
+        function renderEmptyGitHub() {
+            document.getElementById('githubCommits').innerHTML = 
+                '<div class="empty-state">No recent commits found. Click "Sync GitHub" to fetch latest commits.</div>';
+        }
+
+        // Load time tracking
+        async function loadTimeTracking() {
+            try {
+                // Load recent time entries
+                const { data: timeData, error: timeError } = await supabase
+                    .from('time_tracking')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .order('start_time', { ascending: false })
+                    .limit(20);
+                
+                // Load active session
+                const { data: sessionData, error: sessionError } = await supabase
+                    .from('active_sessions')
+                    .select('*')
+                    .eq('user_id', 'neo_todak')
+                    .maybeSingle();  // Use maybeSingle() instead of single() to handle no results
+                
+                if (timeData) {
+                    timeTracking = timeData;
+                    renderTimeTracking();
+                }
+                
+                if (sessionError && sessionError.code !== 'PGRST116') {
+                    console.error('Error loading active session:', sessionError);
+                }
+                
+                if (sessionData) {
+                    activeSession = sessionData;
+                    startActiveTimer();
+                }
+            } catch (error) {
+                console.error('Error loading time tracking:', error);
+                renderEmptyTimeTracking();
+            }
+        }
+
+        // Render time tracking
+        function renderTimeTracking() {
+            const container = document.getElementById('timeTrackingSummary');
+            
+            // Group time by project for today
+            const today = new Date().toDateString();
+            const todayTime = {};
+            let totalToday = 0;
+            
+            timeTracking.forEach(entry => {
+                if (new Date(entry.start_time).toDateString() === today) {
+                    const duration = entry.duration_minutes || 0;
+                    todayTime[entry.project_name] = (todayTime[entry.project_name] || 0) + duration;
+                    totalToday += duration;
+                }
+            });
+            
+            const timeCards = Object.entries(todayTime)
+                .sort(([,a], [,b]) => b - a)
+                .map(([project, minutes]) => {
+                    const hours = Math.floor(minutes / 60);
+                    const mins = Math.round(minutes % 60);
+                    const timeStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                    
+                    return `
+                        <div class="context-item" style="margin-bottom: 1rem;">
+                            <h3>${project}</h3>
+                            <p style="font-size: 1.25rem; font-weight: 600; color: var(--primary);">${timeStr}</p>
+                            <div class="progress-bar" style="margin-top: 0.5rem;">
+                                <div class="progress-fill" style="width: ${(minutes / totalToday) * 100}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            
+            const totalHours = Math.floor(totalToday / 60);
+            const totalMins = Math.round(totalToday % 60);
+            
+            container.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <h3 style="color: var(--text-secondary); margin-bottom: 0.5rem;">Today's Total</h3>
+                    <p style="font-size: 2rem; font-weight: 600; color: var(--primary);">
+                        ${totalHours}h ${totalMins}m
+                    </p>
+                </div>
+                <div style="display: grid; gap: 1rem;">
+                    ${timeCards || '<div class="empty-state">No time tracked today</div>'}
+                </div>
+            `;
+        }
+
+        // Render empty time tracking
+        function renderEmptyTimeTracking() {
+            document.getElementById('timeTrackingSummary').innerHTML = 
+                '<div class="empty-state">No time tracking data available</div>';
+        }
+
+        // Start active timer
+        function startActiveTimer() {
+            if (!activeSession) return;
+            
+            const timerEl = document.getElementById('activeTimer');
+            const projectEl = document.getElementById('activeProject');
+            const timeEl = document.getElementById('activeTime');
+            
+            timerEl.style.display = 'flex';
+            projectEl.textContent = activeSession.project_name;
+            
+            // Update timer every second
+            const updateTimer = () => {
+                const start = new Date(activeSession.start_time);
+                const now = new Date();
+                const diff = now - start;
+                
+                const hours = Math.floor(diff / 3600000);
+                const minutes = Math.floor((diff % 3600000) / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                timeEl.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            };
+            
+            updateTimer();
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Stop timer
+        async function stopTimer() {
+            if (!activeSession) return;
+            
+            try {
+                // End the session
+                const endTime = new Date().toISOString();
+                await supabase
+                    .from('time_tracking')
+                    .insert({
+                        user_id: 'neo_todak',
+                        project_name: activeSession.project_name,
+                        task_id: activeSession.task_id,
+                        start_time: activeSession.start_time,
+                        end_time: endTime,
+                        description: 'Session ended from FlowState dashboard'
+                    });
+                
+                // Delete active session
+                await supabase
+                    .from('active_sessions')
+                    .delete()
+                    .eq('id', activeSession.id);
+                
+                // Update context timestamp when timer stops
+                updateContextTimestamp();
+                
+                // Clear UI
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                
+                document.getElementById('activeTimer').style.display = 'none';
+                activeSession = null;
+                
+                // Reload time tracking
+                loadTimeTracking();
+            } catch (error) {
+                console.error('Error stopping timer:', error);
+            }
+        }
+
+        // Start timer for a project
+        async function startTimer(projectName) {
+            try {
+                // Stop any existing timer first
+                if (activeSession) {
+                    await stopTimer();
+                }
+                
+                // Create new active session
+                const { data, error } = await supabase
+                    .from('active_sessions')
+                    .insert({
+                        user_id: 'neo_todak',
+                        project_name: projectName,
+                        start_time: new Date().toISOString()
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                activeSession = data;
+                
+                // Update current context to this project
+                await supabase
+                    .from('current_context')
+                    .update({ 
+                        project_name: projectName,
+                        last_updated: new Date().toISOString(),
+                        current_task: `Working on ${projectName}`
+                    })
+                    .eq('user_id', 'neo_todak');
+                
+                // Start the timer UI
+                startActiveTimer();
+                
+                // Reload everything to show updated state
+                await Promise.all([
+                    loadCurrentContext(),
+                    loadProjects(),
+                    loadTimeTracking()
+                ]);
+                
+                // Show notification
+                console.log(`⏱️ Timer started for ${projectName}`);
+                
+            } catch (error) {
+                console.error('Error starting timer:', error);
+            }
+        }
+
+        // Refresh GitHub commits (placeholder for actual GitHub API integration)
+        async function refreshGitHub() {
+            // For now, just reload from database
+            await loadGitHubCommits();
+            
+            // Update timestamp when syncing
+            updateContextTimestamp();
+            
+            // Show notification
+            const button = event.target.closest('button');
+            if (button) {
+                const originalText = button.innerHTML;
+                button.innerHTML = '✓ Synced!';
+                button.disabled = true;
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 2000);
+            }
+        }
+
+        // Format time
+        function formatTime(timestamp) {
+            if (!timestamp) return 'Never';
+            
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            return new Date(dateString).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        // Get status color
+        function getStatusColor(status) {
+            const colors = {
+                'active': 'var(--success)',
+                'completed': 'var(--info)',
+                'paused': 'var(--warning)',
+                'planning': 'var(--text-secondary)'
+            };
+            return colors[status] || 'var(--text-secondary)';
+        }
+
+        // Make functions globally accessible
+        window.toggleProjectExpansion = toggleProjectExpansion;
+        window.handleProjectClick = handleProjectClick;
+        window.refreshGitHub = refreshGitHub;
+        window.stopTimer = stopTimer;
+        window.startTimer = startTimer;
+        window.showEmbeddingStats = showEmbeddingStats;
+        window.hideEmbeddingStats = hideEmbeddingStats;
+        window.toggleActivityGrouping = toggleActivityGrouping;
+
+        // Update current context timestamp
+        async function updateContextTimestamp() {
+            try {
+                // Get current project from context
+                if (!currentContext || !currentContext.project_name) {
+                    console.log('No active project context');
+                    return;
+                }
+                
+                const { data, error } = await supabase
+                    .from('current_context')
+                    .update({ last_updated: new Date().toISOString() })
+                    .eq('user_id', 'neo_todak')
+                    .eq('project_name', currentContext.project_name);
+                
+                if (error) {
+                    console.error('Error updating timestamp:', error);
+                } else {
+                    console.log(`✅ Timestamp updated for ${currentContext.project_name}`);
+                    // Reload context to show updated time
+                    loadCurrentContext();
+                }
+            } catch (error) {
+                console.error('Error updating timestamp:', error);
+            }
+        }
+
+        // Start heartbeat to keep timestamp current
+        function startTimestampHeartbeat() {
+            // Update immediately when dashboard loads
+            updateContextTimestamp();
+            
+            // Then update every minute while dashboard is open
+            setInterval(() => {
+                updateContextTimestamp();
+            }, 60000); // 60 seconds
+            
+            console.log('💓 Timestamp heartbeat started');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            init();
+        });
+    </script>
+</body>
+</html>
