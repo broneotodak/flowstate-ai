@@ -462,14 +462,14 @@
         
         // Load current context
         async function loadCurrentContext() {
-            // Get recent contexts from last 2 hours
-            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+            // Get recent contexts from last 8 hours (full work day)
+            const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
             
             // Get all recent activities with machine info
             const { data: activities, error } = await supabase
                 .from('flowstate_activities')
                 .select('*')
-                .gte('created_at', twoHoursAgo)
+                .gte('created_at', eightHoursAgo)
                 .order('created_at', { ascending: false })
                 .limit(100);
             
@@ -515,7 +515,7 @@
             const container = document.getElementById('current-projects-list');
             
             if (!contexts || contexts.length === 0) {
-                container.innerHTML = '<div class="text-center py-4 text-gray-500">No active projects in the last 2 hours</div>';
+                container.innerHTML = '<div class="text-center py-4 text-gray-500">No active projects today</div>';
                 return;
             }
             
