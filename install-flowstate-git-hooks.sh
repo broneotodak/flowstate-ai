@@ -44,7 +44,7 @@ log_to_flowstate() {
 {
     "user_id": "$USER_ID",
     "activity_type": "$activity_type",
-    "description": "$description",
+    "activity_description": "$description",
     "project_name": "$project_name",
     "created_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 }
