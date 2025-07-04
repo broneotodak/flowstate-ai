@@ -515,7 +515,7 @@
                         <div class="activity-description">${escapeHtml(activity.activity_description)}</div>
                         <div class="activity-meta">
                             ${activity.project_name ? `<strong>${activity.project_name}</strong> • ` : ''}
-                            ${activity.metadata?.tool || activity.metadata?.source || 'Unknown source'}
+                            ${getActivitySource(activity)}
                         </div>
                     </div>
                     <div class="activity-time">${formatTime(activity.created_at)}</div>
@@ -619,17 +619,49 @@
             ).join(' ');
         }
 
+        function getActivitySource(activity) {
+            // Check metadata for source information
+            if (activity.metadata?.tool) return activity.metadata.tool;
+            if (activity.metadata?.source) return activity.metadata.source;
+            if (activity.metadata?.machine) return activity.metadata.machine;
+            
+            // Use activity type as fallback with better formatting
+            const sourceMap = {
+                'git_commit': 'Git',
+                'git_push': 'Git Push',
+                'file_edit': 'Editor',
+                'file_create': 'File System',
+                'file_delete': 'File System',
+                'command': 'Terminal',
+                'browser': 'Browser',
+                'solution': 'AI Assistant',
+                'milestone': 'FlowState',
+                'maintenance': 'System',
+                'task': 'Task Manager'
+            };
+            
+            return sourceMap[activity.activity_type] || formatActivityType(activity.activity_type);
+        }
+
         function formatTime(timestamp) {
             const date = new Date(timestamp);
             const now = new Date();
             const diffMs = now - date;
+            const diffSecs = Math.floor(diffMs / 1000);
             const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
             
-            if (diffMins < 1) return 'Just now';
-            if (diffMins < 60) return `${diffMins}m ago`;
-            if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+            if (diffSecs < 10) return 'now';
+            if (diffSecs < 60) return `${diffSecs}s ago`;
+            if (diffMins === 1) return '1 minute ago';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours === 1) return '1 hour ago';
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            if (diffDays === 1) return 'yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
             
-            return date.toLocaleDateString();
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
         function escapeHtml(text) {
