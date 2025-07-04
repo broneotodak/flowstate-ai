@@ -226,15 +226,18 @@
             <p class="text-gray-500 text-sm mt-4">After installation, click the extension icon and enter your service key to start tracking</p>
         </div>
         
-        <!-- Current Context -->
+        <!-- Current Projects -->
         <div class="glass rounded-xl p-6 mb-8 card-gradient" id="current-context">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-xl font-semibold mb-2">Current Context</h2>
-                    <div class="text-2xl font-bold mb-1" id="current-project">No active project</div>
-                    <div class="text-gray-400" id="current-task">Start working to see your current context</div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">Current Projects</h2>
+                <div class="text-4xl opacity-20">🎯</div>
+            </div>
+            <div id="current-projects-list" class="space-y-4">
+                <!-- Projects will be dynamically inserted here -->
+                <div class="text-center py-4 text-gray-500">
+                    <div class="inline-block w-6 h-6 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin mb-2"></div>
+                    <p>Loading current projects...</p>
                 </div>
-                <div class="text-6xl opacity-20">🎯</div>
             </div>
         </div>
         
@@ -459,24 +462,145 @@
         
         // Load current context
         async function loadCurrentContext() {
-            const { data, error } = await supabase
-                .from('flowstate_current_context')
-                .select('*')
-                .order('last_updated', { ascending: false })
-                .limit(1);
+            // Get recent contexts from last 2 hours
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
             
-            if (!error && data && data.length > 0) {
-                currentContext = data[0];
-                renderCurrentContext();
+            // Get all recent activities with machine info
+            const { data: activities, error } = await supabase
+                .from('flowstate_activities')
+                .select('*')
+                .gte('created_at', twoHoursAgo)
+                .order('created_at', { ascending: false })
+                .limit(100);
+            
+            if (!error && activities) {
+                // Group by project and machine to find current contexts
+                const projectContexts = {};
+                
+                activities.forEach(activity => {
+                    const project = activity.project_name;
+                    const machine = activity.metadata?.machine || 'Unknown Machine';
+                    const tool = activity.metadata?.tool || activity.metadata?.source || 'Unknown Tool';
+                    
+                    if (!projectContexts[project]) {
+                        projectContexts[project] = {
+                            project_name: project,
+                            latest_activity: activity,
+                            machines: new Set(),
+                            tools: new Set(),
+                            last_updated: activity.created_at
+                        };
+                    }
+                    
+                    projectContexts[project].machines.add(machine);
+                    projectContexts[project].tools.add(tool);
+                    
+                    // Update latest activity if this is more recent
+                    if (activity.created_at > projectContexts[project].last_updated) {
+                        projectContexts[project].latest_activity = activity;
+                        projectContexts[project].last_updated = activity.created_at;
+                    }
+                });
+                
+                // Convert to array and sort by most recent
+                const contexts = Object.values(projectContexts)
+                    .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+                
+                renderCurrentContexts(contexts);
             }
         }
         
-        // Render current context
-        function renderCurrentContext() {
-            if (!currentContext) return;
+        // Render current contexts
+        function renderCurrentContexts(contexts) {
+            const container = document.getElementById('current-projects-list');
             
-            document.getElementById('current-project').textContent = currentContext.project_name || 'No active project';
-            document.getElementById('current-task').textContent = currentContext.current_task || 'No current task';
+            if (!contexts || contexts.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-gray-500">No active projects in the last 2 hours</div>';
+                return;
+            }
+            
+            container.innerHTML = contexts.map((context, index) => {
+                const colors = getProjectColor(context.project_name);
+                const activity = context.latest_activity;
+                const machines = Array.from(context.machines);
+                const tools = Array.from(context.tools);
+                const timeSince = formatTime(context.last_updated);
+                
+                return `
+                    <div class="p-4 rounded-lg border ${index === 0 ? 'border-blue-500/50 bg-blue-500/10' : 'border-gray-700 bg-gray-800/30'}">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                                <span class="text-lg font-semibold">${index === 0 ? '🟢' : '⚪'}</span>
+                                <div>
+                                    <div class="font-semibold text-lg project-badge inline-block" 
+                                         style="background: ${colors.bg}; border-color: ${colors.border}; color: ${colors.text};">
+                                        ${context.project_name}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="text-xs text-gray-500">${timeSince}</span>
+                        </div>
+                        
+                        <div class="ml-9 space-y-2">
+                            <div class="text-sm text-gray-300">
+                                <span class="text-gray-500">Task:</span> ${activity.activity_description}
+                            </div>
+                            
+                            <div class="text-sm">
+                                <span class="text-gray-500">Machines:</span>
+                                <div class="inline-flex flex-wrap gap-2 ml-2">
+                                    ${machines.map(m => `
+                                        <span class="text-xs px-2 py-1 rounded bg-gray-700/50">
+                                            ${getMachineIcon(m)} ${m}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            
+                            <div class="text-sm">
+                                <span class="text-gray-500">Tools:</span>
+                                <div class="inline-flex flex-wrap gap-2 ml-2">
+                                    ${tools.map(t => `
+                                        <span class="text-xs px-2 py-1 rounded bg-gray-700/50">
+                                            ${getToolIcon(t)} ${t}
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Get machine icon based on name
+        function getMachineIcon(machine) {
+            if (machine.includes('Extension')) return '🌐';
+            if (machine.includes('Windows') || machine.includes('PC')) return '🏢';
+            if (machine.includes('Mac')) return '💻';
+            return '🖥️';
+        }
+        
+        // Get tool icon based on name
+        function getToolIcon(tool) {
+            const toolIcons = {
+                'git': '📦',
+                'browser_extension': '🌐',
+                'cursor': '✨',
+                'terminal': '⌨️',
+                'vscode': '💻',
+                'Chrome': '🌐',
+                'Firefox': '🦊',
+                'Safari': '🧭',
+                'Edge': '🌊'
+            };
+            
+            for (const [key, icon] of Object.entries(toolIcons)) {
+                if (tool.toLowerCase().includes(key.toLowerCase())) {
+                    return icon;
+                }
+            }
+            return '🔧';
         }
         
         // Load stats
