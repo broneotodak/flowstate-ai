@@ -138,6 +138,7 @@ async function checkCurrentContext() {
         project: detectedProject,
         task: taskDescription,
         confidence: confidence,
+        url: activeTab ? activeTab.url : '',
         timestamp: new Date().toISOString()
       };
       
@@ -243,13 +244,12 @@ async function logCurrentActivity() {
     if (!data.serviceKey || data.enabled === false) return;
     
     try {
-      // Log activity
-      // Get or create machine ID
-      let machineId = await chrome.storage.local.get('machineId');
-      if (!machineId.machineId) {
-        machineId = { machineId: `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
-        await chrome.storage.local.set(machineId);
-      }
+      // Get browser info for unique machine identification
+      const browserInfo = await getBrowserInfo();
+      const machineName = `${browserInfo.browser} Extension (${browserInfo.os})`;
+      
+      // First, ensure machine exists in database
+      await ensureMachineExists(data.serviceKey, machineName, browserInfo);
       
       const activityData = {
         user_id: 'neo_todak',
@@ -260,55 +260,136 @@ async function logCurrentActivity() {
         metadata: {
           confidence: currentContext.confidence,
           source: 'browser_extension',
-          machine_id: machineId.machineId,
-          machine_name: 'Browser Extension'
+          machine: machineName,  // Use consistent machine name
+          browser: browserInfo.browser,
+          browser_version: browserInfo.version,
+          os: browserInfo.os
         }
       };
       
-      const activityResponse = await fetch(`${SUPABASE_URL}/rest/v1/activity_log`, {
+      // Use the unified logging RPC function
+      const unifiedPayload = {
+        p_user_id: 'neo_todak',
+        p_project_name: currentContext.project,
+        p_activity_type: 'browser_activity',
+        p_activity_description: currentContext.task || `Working on ${currentContext.project}`,
+        p_machine: machineName,
+        p_source: 'browser_extension',
+        p_tool: browserInfo.browser,
+        p_importance: currentContext.confidence > 0.8 ? 'high' : 'normal',
+        p_additional_metadata: {
+          confidence: currentContext.confidence,
+          browser: browserInfo.browser,
+          browser_version: browserInfo.version,
+          os: browserInfo.os,
+          url: currentContext.url || ''
+        }
+      };
+      
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/log_activity_unified`, {
         method: 'POST',
         headers: {
           'apikey': data.serviceKey,
           'Authorization': `Bearer ${data.serviceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(activityData)
+        body: JSON.stringify(unifiedPayload)
       });
       
-      // Update current context
-      const contextData = {
-        user_id: 'neo_todak',
-        project_name: currentContext.project,
-        current_task: currentContext.task,
-        current_phase: 'Development',
-        last_updated: new Date().toISOString(),
-        metadata: {
-          confidence: currentContext.confidence,
-          detected_by: 'browser_extension'
-        }
-      };
+      if (!response.ok) {
+        throw new Error(`Failed to log activity: ${await response.text()}`);
+      }
       
-      const contextResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/current_context?on_conflict=user_id`,
-        {
-          method: 'POST',
-          headers: {
-            'apikey': data.serviceKey,
-            'Authorization': `Bearer ${data.serviceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal,resolution=merge-duplicates'
-          },
-          body: JSON.stringify(contextData)
-        }
-      );
-      
-      console.log('Activity logged successfully');
+      console.log('Activity logged successfully via unified logger');
       
     } catch (error) {
       console.error('Error logging activity:', error);
     }
   });
+}
+
+// Get browser information for unique machine identification
+async function getBrowserInfo() {
+  // Get browser name and version
+  const userAgent = navigator.userAgent;
+  let browser = 'Unknown Browser';
+  let version = '';
+  
+  if (userAgent.includes('Chrome')) {
+    browser = 'Chrome';
+    version = userAgent.match(/Chrome\/([0-9.]+)/)?.[1] || '';
+  } else if (userAgent.includes('Firefox')) {
+    browser = 'Firefox';
+    version = userAgent.match(/Firefox\/([0-9.]+)/)?.[1] || '';
+  } else if (userAgent.includes('Safari')) {
+    browser = 'Safari';
+    version = userAgent.match(/Version\/([0-9.]+)/)?.[1] || '';
+  } else if (userAgent.includes('Edge')) {
+    browser = 'Edge';
+    version = userAgent.match(/Edg\/([0-9.]+)/)?.[1] || '';
+  }
+  
+  // Get OS
+  let os = 'Unknown OS';
+  if (userAgent.includes('Windows')) os = 'Windows';
+  else if (userAgent.includes('Mac')) os = 'macOS';
+  else if (userAgent.includes('Linux')) os = 'Linux';
+  else if (userAgent.includes('Android')) os = 'Android';
+  else if (userAgent.includes('iOS')) os = 'iOS';
+  
+  return { browser, version, os };
+}
+
+// Ensure machine exists in database
+async function ensureMachineExists(serviceKey, machineName, browserInfo) {
+  try {
+    // Check if machine exists
+    const checkResponse = await fetch(
+      `${SUPABASE_URL}/rest/v1/context_embeddings?type=eq.machine&name=eq.${encodeURIComponent(machineName)}`,
+      {
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`
+        }
+      }
+    );
+    
+    const machines = await checkResponse.json();
+    
+    if (!machines || machines.length === 0) {
+      // Create machine entry
+      const machineData = {
+        type: 'machine',
+        name: machineName,
+        parent_name: 'neo_todak',
+        metadata: {
+          user_id: 'neo_todak',
+          machine_type: 'browser_extension',
+          os: browserInfo.os,
+          browser: browserInfo.browser,
+          browser_version: browserInfo.version,
+          location: 'browser',
+          icon: '🌐',
+          created_at: new Date().toISOString()
+        },
+        embedding: null
+      };
+      
+      await fetch(`${SUPABASE_URL}/rest/v1/context_embeddings`, {
+        method: 'POST',
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(machineData)
+      });
+      
+      console.log('Created new machine entry:', machineName);
+    }
+  } catch (error) {
+    console.error('Error ensuring machine exists:', error);
+  }
 }
 
 // Update extension badge

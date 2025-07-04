@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState AI - Real-time Activity Dashboard</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><text x='16' y='24' text-anchor='middle' font-size='24' fill='white'>🌊</text></svg>">
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-card h3 {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .current-context {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .current-context::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        .current-context-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .current-project {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .current-task {
+            font-size: 1.125rem;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .panel h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            transition: all 0.2s;
+        }
+
+        .activity-item:hover {
+            transform: translateX(4px);
+            background: rgba(79, 70, 229, 0.1);
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .project-badge {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
+
+        .phase-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-transform: capitalize;
+        }
+
+        .activity-task {
+            font-size: 1.125rem;
+            color: var(--text);
+            margin-bottom: 0.625rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .activity-details {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .activity-details span:not(:first-child)::before {
+            content: '• ';
+            margin: 0 0.5rem;
+        }
+
+        .activity-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .type-git_commit { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .type-git_push { background: rgba(79, 70, 229, 0.2); color: #4f46e5; }
+        .type-browser_activity { background: rgba(124, 58, 237, 0.2); color: #7c3aed; }
+        .type-ai_conversation { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .type-terminal_command { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        .activity-description {
+            color: var(--text);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-meta {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .activity-time {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+
+        .machine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .machine-card {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            position: relative;
+        }
+
+        .machine-card.active {
+            border: 2px solid var(--success);
+        }
+
+        .machine-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .machine-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .machine-status {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .active-indicator {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .search-bar {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online { background: var(--success); }
+        .status-offline { background: var(--error); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <span style="font-size: 3rem;">🌊</span>
+                <div>
+                    <h1>FlowState AI</h1>
+                    <p style="color: var(--text-secondary);">Real-time Activity Dashboard</p>
+                </div>
+            </div>
+            <div id="connection-status">
+                <span class="status-indicator status-offline"></span>
+                <span>Connecting...</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Today's Activities</h3>
+                <div class="stat-value" id="today-activities">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Projects</h3>
+                <div class="stat-value" id="active-projects">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Connected Machines</h3>
+                <div class="stat-value" id="connected-machines">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Commits</h3>
+                <div class="stat-value" id="total-commits">0</div>
+            </div>
+        </div>
+
+        <!-- Browser Extension Download Section -->
+        <div class="section" style="margin: 2rem 0;">
+            <h2 style="margin-bottom: 1rem;">🌐 Browser Extension</h2>
+            <div style="background: var(--bg-tertiary); padding: 1.5rem; border-radius: 8px;">
+                <p style="margin-bottom: 1rem;">Track your browser activity automatically with the FlowState extension</p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <a href="installers/FlowState-Extension-Installer-Windows.bat" 
+                       download 
+                       class="download-btn"
+                       style="background: var(--primary); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;"
+                       onmouseover="this.style.background='var(--primary-dark)'"
+                       onmouseout="this.style.background='var(--primary)'">
+                        <span>💻</span> Windows Installer
+                    </a>
+                    <a href="installers/FlowState-Extension-Installer-Mac.sh" 
+                       download 
+                       class="download-btn"
+                       style="background: var(--primary); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;"
+                       onmouseover="this.style.background='var(--primary-dark)'"
+                       onmouseout="this.style.background='var(--primary)'">
+                        <span>🍎</span> Mac Installer
+                    </a>
+                    <a href="installers/flowstate-browser-extension.zip" 
+                       download 
+                       class="download-btn"
+                       style="background: var(--bg-secondary); color: white; padding: 0.75rem 1.5rem; border-radius: 6px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s;"
+                       onmouseover="this.style.background='var(--bg-tertiary)'"
+                       onmouseout="this.style.background='var(--bg-secondary)'">
+                        <span>📦</span> Manual Install (ZIP)
+                    </a>
+                </div>
+                <p style="margin-top: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+                    After installation, click the extension icon and enter your service key to start tracking
+                </p>
+            </div>
+        </div>
+
+        <div class="current-context" id="current-context">
+            <div class="current-context-content">
+                <div class="current-project" id="current-project">No active project</div>
+                <div class="current-task" id="current-task">Start working to see your current context</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>🕐 Recent Activities</h2>
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="activity-search" placeholder="Search activities...">
+                </div>
+                <div class="activity-list" id="activity-list">
+                    <div class="empty-state">
+                        <div class="loading"></div>
+                        <p>Loading activities...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>💻 Active Machines</h2>
+                <div class="machine-grid" id="machine-grid">
+                    <div class="empty-state">No machines connected</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6YW1hbXltZnpoZWx2a3dwdmd0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODE0MzA2OCwiZXhwIjoyMDYzNzE5MDY4fQ.-r8qd7sa3giTKBlxm6N-yzxVwV4Lvy12N7Oker0qwhw';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+        // State
+        let activities = [];
+        let machines = [];
+        let currentContext = null;
+
+        // Initialize
+        async function init() {
+            updateConnectionStatus(true);
+            
+            // Load initial data
+            await Promise.all([
+                loadActivities(),
+                loadMachines(),
+                loadCurrentContext(),
+                updateStats()
+            ]);
+
+            // Set up realtime subscriptions
+            setupRealtimeSubscriptions();
+
+            // Set up search
+            document.getElementById('activity-search').addEventListener('input', (e) => {
+                filterActivities(e.target.value);
+            });
+        }
+
+        // Load activities
+        async function loadActivities() {
+            const { data, error } = await supabase
+                .from('flowstate_activities')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50);
+
+            if (error) {
+                console.error('Error loading activities:', error);
+                return;
+            }
+
+            activities = data || [];
+            renderActivities();
+        }
+
+        // Load machines
+        async function loadMachines() {
+            const { data, error } = await supabase
+                .from('flowstate_machines')
+                .select('*')
+                .order('last_active', { ascending: false });
+
+            if (error) {
+                console.error('Error loading machines:', error);
+                return;
+            }
+
+            machines = data || [];
+            // Transform machine data to match expected format
+            machines = machines.map(m => ({
+                machine_name: m.machine_name,
+                last_active: m.last_active,
+                is_active: new Date(m.last_active) > new Date(Date.now() - 3600000), // Active if used in last hour
+                activity_count: m.activity_count,
+                last_project: m.last_project
+            }));
+            renderMachines();
+        }
+
+        // Load current context
+        async function loadCurrentContext() {
+            const { data, error } = await supabase
+                .from('flowstate_current_context')
+                .select('*')
+                .order('last_updated', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (error && error.code !== 'PGRST116') {
+                console.error('Error loading context:', error);
+                return;
+            }
+
+            currentContext = data;
+            
+            // Also load all contexts for display
+            const { data: allContexts } = await supabase
+                .from('flowstate_current_context')
+                .select('*')
+                .order('last_updated', { ascending: false });
+            
+            window.allContexts = allContexts || [];
+            renderCurrentContext();
+        }
+
+        // Update stats
+        async function updateStats() {
+            // Today's activities
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const { count: todayCount } = await supabase
+                .from('flowstate_activities')
+                .select('*', { count: 'exact', head: true })
+                .gte('created_at', today.toISOString());
+
+            document.getElementById('today-activities').textContent = todayCount || 0;
+
+            // Active projects
+            const { data: projects } = await supabase
+                .from('flowstate_activities')
+                .select('project_name')
+                .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+            const uniqueProjects = [...new Set(projects?.map(p => p.project_name).filter(Boolean))];
+            document.getElementById('active-projects').textContent = uniqueProjects.length;
+
+            // Connected machines
+            const { count: machineCount } = await supabase
+                .from('flowstate_machines')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true);
+
+            document.getElementById('connected-machines').textContent = machineCount || 0;
+
+            // Total commits
+            const { count: commitCount } = await supabase
+                .from('flowstate_activities')
+                .select('*', { count: 'exact', head: true })
+                .in('activity_type', ['git_commit', 'git_push']);
+
+            document.getElementById('total-commits').textContent = commitCount || 0;
+        }
+
+        // Render activities
+        function renderActivities(filteredActivities = activities) {
+            const container = document.getElementById('activity-list');
+            
+            if (filteredActivities.length === 0) {
+                container.innerHTML = '<div class="empty-state">No activities found</div>';
+                return;
+            }
+
+            container.innerHTML = filteredActivities.map(activity => {
+                // Generate color based on project name
+                const projectColor = getProjectColor(activity.project_name);
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-header">
+                                <span class="project-badge" style="background: ${projectColor}">${activity.project_name || 'Unknown'}</span>
+                                <span class="phase-indicator">${formatActivityType(activity.activity_type)}</span>
+                            </div>
+                            <div class="activity-task">${escapeHtml(activity.activity_description)}</div>
+                            <div class="activity-details">
+                                <span>${getActivitySource(activity)}</span>
+                                <span>${activity.metadata?.machine || 'Unknown'}</span>
+                            </div>
+                        </div>
+                        <div class="activity-time">${formatTime(activity.created_at)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render machines
+        function renderMachines() {
+            const container = document.getElementById('machine-grid');
+            
+            if (machines.length === 0) {
+                container.innerHTML = '<div class="empty-state">No machines connected</div>';
+                return;
+            }
+
+            container.innerHTML = machines.map(machine => `
+                <div class="machine-card ${machine.is_active ? 'active' : ''}">
+                    ${machine.is_active ? '<div class="active-indicator"></div>' : ''}
+                    <div class="machine-icon">${machine.icon || '💻'}</div>
+                    <div class="machine-name">${escapeHtml(machine.machine_name)}</div>
+                    <div class="machine-status" style="${machine.is_active ? 'color: var(--success); font-weight: 500;' : 'color: var(--error); opacity: 0.7;'}">
+                        ${machine.is_active ? '🟢 Active' : '🔴 Inactive'} - ${formatTime(machine.last_active)}
+                    </div>
+                    <div class="machine-info">${machine.activity_count || 0} activities - ${machine.os || 'Unknown OS'}</div>
+                </div>
+            `).join('');
+        }
+
+        // Render current context
+        function renderCurrentContext() {
+            if (!currentContext) {
+                document.getElementById('current-project').textContent = 'No active project';
+                document.getElementById('current-task').textContent = 'Start working to see your current context';
+                return;
+            }
+
+            document.getElementById('current-project').textContent = currentContext.project_name || 'Unknown Project';
+            document.getElementById('current-task').textContent = currentContext.current_task || 'No specific task';
+        }
+
+        // Filter activities
+        function filterActivities(searchTerm) {
+            if (!searchTerm) {
+                renderActivities();
+                return;
+            }
+
+            const filtered = activities.filter(activity => 
+                activity.activity_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                activity.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                activity.activity_type.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            renderActivities(filtered);
+        }
+
+        // Setup realtime subscriptions
+        function setupRealtimeSubscriptions() {
+            // Subscribe to new activities
+            supabase
+                .channel('activity_changes')
+                .on('postgres_changes', 
+                    { event: 'INSERT', schema: 'public', table: 'context_embeddings', filter: 'type=eq.activity' },
+                    (payload) => {
+                        activities.unshift(payload.new);
+                        if (activities.length > 50) activities.pop();
+                        renderActivities();
+                        updateStats();
+                    }
+                )
+                .subscribe();
+
+            // Subscribe to context changes
+            supabase
+                .channel('context_changes')
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: 'current_context' },
+                    (payload) => {
+                        currentContext = payload.new;
+                        renderCurrentContext();
+                    }
+                )
+                .subscribe();
+
+            // Subscribe to machine updates
+            supabase
+                .channel('machine_changes')
+                .on('postgres_changes',
+                    { event: '*', schema: 'public', table: 'user_machines' },
+                    () => {
+                        loadMachines();
+                        updateStats();
+                    }
+                )
+                .subscribe();
+        }
+
+        // Utility functions
+        function formatActivityType(type) {
+            return type.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        }
+
+        function getProjectColor(projectName) {
+            // Cache for consistent colors
+            if (!window.projectColors) {
+                window.projectColors = new Map();
+            }
+            
+            // Return cached color if exists
+            if (window.projectColors.has(projectName)) {
+                return window.projectColors.get(projectName);
+            }
+            
+            // Predefined colors for known projects
+            const predefinedColors = {
+                'flowstate-ai': '#4f46e5',        // Primary blue
+                'kenal-admin': '#10b981',         // Green
+                'FlowState': '#7c3aed',           // Purple
+                'TODAK': '#f59e0b',               // Amber
+                'cursor-project': '#ef4444',      // Red
+                'flowstate-ai-github': '#06b6d4', // Cyan
+            };
+            
+            if (predefinedColors[projectName]) {
+                window.projectColors.set(projectName, predefinedColors[projectName]);
+                return predefinedColors[projectName];
+            }
+            
+            // Generate distinct color for new projects
+            let hash = 0;
+            for (let i = 0; i < (projectName || 'Unknown').length; i++) {
+                hash = projectName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            // Use golden ratio for better color distribution
+            const golden_ratio = 0.618033988749895;
+            const hue = (hash * golden_ratio * 360) % 360;
+            
+            // Vary saturation and lightness for more variety
+            const saturation = 65 + (hash % 20); // 65-85%
+            const lightness = 45 + (hash % 15);  // 45-60%
+            
+            const color = `hsl(${Math.floor(hue)}, ${saturation}%, ${lightness}%)`;
+            window.projectColors.set(projectName, color);
+            
+            return color;
+        }
+
+        function getActivitySource(activity) {
+            // Check metadata for source information
+            if (activity.metadata?.tool) return activity.metadata.tool;
+            if (activity.metadata?.source) return activity.metadata.source;
+            if (activity.metadata?.machine) return activity.metadata.machine;
+            
+            // Use activity type as fallback with better formatting
+            const sourceMap = {
+                'git_commit': 'Git',
+                'git_push': 'Git Push',
+                'file_edit': 'Editor',
+                'file_create': 'File System',
+                'file_delete': 'File System',
+                'command': 'Terminal',
+                'browser': 'Browser',
+                'solution': 'AI Assistant',
+                'milestone': 'FlowState',
+                'maintenance': 'System',
+                'task': 'Task Manager'
+            };
+            
+            return sourceMap[activity.activity_type] || formatActivityType(activity.activity_type);
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffSecs = Math.floor(diffMs / 1000);
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+            
+            if (diffSecs < 10) return 'now';
+            if (diffSecs < 60) return `${diffSecs}s ago`;
+            if (diffMins === 1) return '1 minute ago';
+            if (diffMins < 60) return `${diffMins} minutes ago`;
+            if (diffHours === 1) return '1 hour ago';
+            if (diffHours < 24) return `${diffHours} hours ago`;
+            if (diffDays === 1) return 'yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connection-status');
+            status.innerHTML = connected 
+                ? '<span class="status-indicator status-online"></span><span>Connected</span>'
+                : '<span class="status-indicator status-offline"></span><span>Disconnected</span>';
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
