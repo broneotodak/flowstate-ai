@@ -457,7 +457,9 @@
             const { data, error } = await supabase
                 .from('flowstate_current_context')
                 .select('*')
-                .single();
+                .order('last_updated', { ascending: false })
+                .limit(1)
+                .maybeSingle();
 
             if (error && error.code !== 'PGRST116') {
                 console.error('Error loading context:', error);
@@ -465,6 +467,14 @@
             }
 
             currentContext = data;
+            
+            // Also load all contexts for display
+            const { data: allContexts } = await supabase
+                .from('flowstate_current_context')
+                .select('*')
+                .order('last_updated', { ascending: false });
+            
+            window.allContexts = allContexts || [];
             renderCurrentContext();
         }
 
