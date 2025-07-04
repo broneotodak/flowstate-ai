@@ -24,6 +24,10 @@ const PROJECT_PATTERNS = {
     /clauden/i,
     /claude\.ai.*dashboard/i,
     /anthropic.*dashboard/i
+  ],
+  // Auto-detect any GitHub project
+  'GitHub': [
+    /github\.com/i
   ]
 };
 
@@ -175,6 +179,10 @@ function detectProjectFromTab(tab) {
       } else if (repoName.toLowerCase().includes('clauden')) {
         project = 'ClaudeN';
         confidence = 0.9;
+      } else if (repoName) {
+        // Use the repository name as the project
+        project = repoName;
+        confidence = 0.8;
       }
       
       // Detect task from GitHub URL
@@ -236,19 +244,28 @@ async function logCurrentActivity() {
     
     try {
       // Log activity
+      // Get or create machine ID
+      let machineId = await chrome.storage.local.get('machineId');
+      if (!machineId.machineId) {
+        machineId = { machineId: `browser_${Date.now()}_${Math.random().toString(36).substr(2, 9)}` };
+        await chrome.storage.local.set(machineId);
+      }
+      
       const activityData = {
         user_id: 'neo_todak',
         activity_type: 'browser_activity',
-        description: currentContext.task || `Working on ${currentContext.project}`,
+        activity_description: currentContext.task || `Working on ${currentContext.project}`,
         project_name: currentContext.project,
         created_at: new Date().toISOString(),
         metadata: {
           confidence: currentContext.confidence,
-          source: 'browser_extension'
+          source: 'browser_extension',
+          machine_id: machineId.machineId,
+          machine_name: 'Browser Extension'
         }
       };
       
-      const activityResponse = await fetch(`${SUPABASE_URL}/rest/v1/activities`, {
+      const activityResponse = await fetch(`${SUPABASE_URL}/rest/v1/activity_log`, {
         method: 'POST',
         headers: {
           'apikey': data.serviceKey,
