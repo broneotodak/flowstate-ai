@@ -49,6 +49,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         await chrome.storage.local.set({ serviceKey, enabled });
         showStatus('Settings saved!');
+        
+        // Trigger immediate context check and update
+        chrome.runtime.sendMessage({ action: 'forceCheck' }, (response) => {
+            updateContextDisplay();
+            if (enabled && serviceKey) {
+                showStatus('Extension activated! Checking context...');
+            }
+        });
     });
     
     document.getElementById('enableToggle').addEventListener('change', async (e) => {

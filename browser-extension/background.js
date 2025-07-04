@@ -69,6 +69,9 @@ chrome.runtime.onInstalled.addListener(() => {
       console.log('Service key not configured');
     }
   });
+  
+  // Initial context check
+  checkCurrentContext();
 });
 
 // Listen for alarm events
@@ -174,7 +177,10 @@ function detectProjectFromTab(tab) {
       const repoName = pathParts[2];
       
       // Check if it's a known project
-      if (repoName.toLowerCase().includes('flowstate')) {
+      if (repoName.toLowerCase() === 'flowstate-ai') {
+        project = 'FlowState AI';
+        confidence = 0.95;
+      } else if (repoName.toLowerCase().includes('flowstate')) {
         project = 'FlowState';
         confidence = 0.9;
       } else if (repoName.toLowerCase().includes('clauden')) {

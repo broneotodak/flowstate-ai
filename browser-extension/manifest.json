@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FlowState Context Tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Automatically tracks your current project context based on browser activity",
   "permissions": [
     "tabs",
