@@ -464,10 +464,11 @@
             const { data, error } = await supabase
                 .from('flowstate_current_context')
                 .select('*')
-                .single();
+                .order('last_updated', { ascending: false })
+                .limit(1);
             
-            if (!error && data) {
-                currentContext = data;
+            if (!error && data && data.length > 0) {
+                currentContext = data[0];
                 renderCurrentContext();
             }
         }
