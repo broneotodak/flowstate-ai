@@ -494,8 +494,17 @@
                     // Skip invalid projects
                     if (activity.project_name === 'cursor-project') return;
                     
-                    if (activity.activity_type === 'browser_activity' || 
-                        activity.metadata?.source === 'browser_extension') {
+                    // Check if this is a browser/GitHub activity
+                    const isBrowserActivity = (
+                        activity.activity_type === 'browser_activity' || 
+                        activity.metadata?.source === 'browser_extension' ||
+                        (activity.metadata?.tool === 'Chrome' || 
+                         activity.metadata?.tool === 'Firefox' || 
+                         activity.metadata?.tool === 'Safari' || 
+                         activity.metadata?.tool === 'Edge')
+                    );
+                    
+                    if (isBrowserActivity) {
                         browserActivities.push(activity);
                     } else {
                         devActivities.push(activity);
@@ -505,7 +514,12 @@
                 // Process development activities
                 const devProjectContexts = {};
                 devActivities.forEach(activity => {
-                    const project = activity.project_name;
+                    // Normalize project names
+                    let project = activity.project_name;
+                    if (project === 'flowstate-ai-github' || project === 'flowstate-ai') {
+                        project = 'FlowState AI';
+                    }
+                    
                     const machine = activity.metadata?.machine || 'Unknown Machine';
                     const tool = activity.metadata?.tool || activity.metadata?.source || 'Unknown Tool';
                     
