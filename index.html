@@ -226,18 +226,30 @@
             <p class="text-gray-500 text-sm mt-4">After installation, click the extension icon and enter your service key to start tracking</p>
         </div>
         
-        <!-- Current Projects -->
+        <!-- Current Development Projects -->
         <div class="glass rounded-xl p-6 mb-8 card-gradient" id="current-context">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold">Current Projects</h2>
-                <div class="text-4xl opacity-20">🎯</div>
+                <h2 class="text-xl font-semibold">Active Development</h2>
+                <div class="text-4xl opacity-20">💻</div>
             </div>
             <div id="current-projects-list" class="space-y-4">
-                <!-- Projects will be dynamically inserted here -->
+                <!-- Development projects will be dynamically inserted here -->
                 <div class="text-center py-4 text-gray-500">
                     <div class="inline-block w-6 h-6 border-2 border-gray-600 border-t-blue-500 rounded-full animate-spin mb-2"></div>
-                    <p>Loading current projects...</p>
+                    <p>Loading active development...</p>
                 </div>
+            </div>
+        </div>
+        
+        <!-- GitHub Activity -->
+        <div class="glass rounded-xl p-6 mb-8" id="github-activity">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold">GitHub Activity</h2>
+                <div class="text-4xl opacity-20">🐙</div>
+            </div>
+            <div id="github-projects-list" class="space-y-3">
+                <!-- GitHub activities will be dynamically inserted here -->
+                <div class="text-center py-4 text-gray-500">Loading GitHub activity...</div>
             </div>
         </div>
         
@@ -471,19 +483,34 @@
                 .select('*')
                 .gte('created_at', eightHoursAgo)
                 .order('created_at', { ascending: false })
-                .limit(100);
+                .limit(200);
             
             if (!error && activities) {
-                // Group by project and machine to find current contexts
-                const projectContexts = {};
+                // Separate development activities from browser activities
+                const devActivities = [];
+                const browserActivities = [];
                 
                 activities.forEach(activity => {
+                    // Skip invalid projects
+                    if (activity.project_name === 'cursor-project') return;
+                    
+                    if (activity.activity_type === 'browser_activity' || 
+                        activity.metadata?.source === 'browser_extension') {
+                        browserActivities.push(activity);
+                    } else {
+                        devActivities.push(activity);
+                    }
+                });
+                
+                // Process development activities
+                const devProjectContexts = {};
+                devActivities.forEach(activity => {
                     const project = activity.project_name;
                     const machine = activity.metadata?.machine || 'Unknown Machine';
                     const tool = activity.metadata?.tool || activity.metadata?.source || 'Unknown Tool';
                     
-                    if (!projectContexts[project]) {
-                        projectContexts[project] = {
+                    if (!devProjectContexts[project]) {
+                        devProjectContexts[project] = {
                             project_name: project,
                             latest_activity: activity,
                             machines: new Set(),
@@ -492,21 +519,45 @@
                         };
                     }
                     
-                    projectContexts[project].machines.add(machine);
-                    projectContexts[project].tools.add(tool);
+                    devProjectContexts[project].machines.add(machine);
+                    devProjectContexts[project].tools.add(tool);
                     
-                    // Update latest activity if this is more recent
-                    if (activity.created_at > projectContexts[project].last_updated) {
-                        projectContexts[project].latest_activity = activity;
-                        projectContexts[project].last_updated = activity.created_at;
+                    if (activity.created_at > devProjectContexts[project].last_updated) {
+                        devProjectContexts[project].latest_activity = activity;
+                        devProjectContexts[project].last_updated = activity.created_at;
                     }
                 });
                 
-                // Convert to array and sort by most recent
-                const contexts = Object.values(projectContexts)
+                // Process GitHub activities
+                const githubProjects = {};
+                browserActivities.forEach(activity => {
+                    const project = activity.project_name;
+                    
+                    if (!githubProjects[project]) {
+                        githubProjects[project] = {
+                            project_name: project,
+                            count: 0,
+                            last_activity: activity.activity_description,
+                            last_updated: activity.created_at
+                        };
+                    }
+                    
+                    githubProjects[project].count++;
+                    if (activity.created_at > githubProjects[project].last_updated) {
+                        githubProjects[project].last_activity = activity.activity_description;
+                        githubProjects[project].last_updated = activity.created_at;
+                    }
+                });
+                
+                // Render both sections
+                const devContexts = Object.values(devProjectContexts)
+                    .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+                    
+                const githubContexts = Object.values(githubProjects)
                     .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
                 
-                renderCurrentContexts(contexts);
+                renderCurrentContexts(devContexts);
+                renderGitHubActivity(githubContexts);
             }
         }
         
@@ -515,7 +566,7 @@
             const container = document.getElementById('current-projects-list');
             
             if (!contexts || contexts.length === 0) {
-                container.innerHTML = '<div class="text-center py-4 text-gray-500">No active projects today</div>';
+                container.innerHTML = '<div class="text-center py-4 text-gray-500">No active development today</div>';
                 return;
             }
             
@@ -568,6 +619,37 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Render GitHub activity
+        function renderGitHubActivity(projects) {
+            const container = document.getElementById('github-projects-list');
+            
+            if (!projects || projects.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-gray-500">No GitHub activity today</div>';
+                return;
+            }
+            
+            container.innerHTML = projects.map(project => {
+                const colors = getProjectColor(project.project_name);
+                const timeSince = formatTime(project.last_updated);
+                
+                return `
+                    <div class="p-3 rounded-lg bg-gray-800/30 border border-gray-700">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <span class="project-badge" 
+                                     style="background: ${colors.bg}; border-color: ${colors.border}; color: ${colors.text};">
+                                    ${project.project_name}
+                                </span>
+                                <span class="text-xs text-gray-500">${project.count} activities</span>
+                            </div>
+                            <span class="text-xs text-gray-500">${timeSince}</span>
+                        </div>
+                        <div class="text-sm text-gray-400 mt-2">${project.last_activity}</div>
                     </div>
                 `;
             }).join('');
