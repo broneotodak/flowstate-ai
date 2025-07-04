@@ -545,8 +545,10 @@
                     ${machine.is_active ? '<div class="active-indicator"></div>' : ''}
                     <div class="machine-icon">${machine.icon || '💻'}</div>
                     <div class="machine-name">${escapeHtml(machine.machine_name)}</div>
-                    <div class="machine-status">${machine.os || 'Unknown OS'}</div>
-                    <div class="machine-status">${formatTime(machine.last_active)}</div>
+                    <div class="machine-status" style="${machine.is_active ? 'color: var(--success); font-weight: 500;' : 'color: var(--error); opacity: 0.7;'}">
+                        ${machine.is_active ? '🟢 Active' : '🔴 Inactive'} - ${formatTime(machine.last_active)}
+                    </div>
+                    <div class="machine-info">${machine.activity_count || 0} activities - ${machine.os || 'Unknown OS'}</div>
                 </div>
             `).join('');
         }
