@@ -697,8 +697,18 @@
         }
 
         function getProjectColor(projectName) {
-            // Generate consistent colors for projects
-            const colors = {
+            // Cache for consistent colors
+            if (!window.projectColors) {
+                window.projectColors = new Map();
+            }
+            
+            // Return cached color if exists
+            if (window.projectColors.has(projectName)) {
+                return window.projectColors.get(projectName);
+            }
+            
+            // Predefined colors for known projects
+            const predefinedColors = {
                 'flowstate-ai': '#4f46e5',        // Primary blue
                 'kenal-admin': '#10b981',         // Green
                 'FlowState': '#7c3aed',           // Purple
@@ -707,18 +717,29 @@
                 'flowstate-ai-github': '#06b6d4', // Cyan
             };
             
-            // Return specific color or generate one based on project name
-            if (colors[projectName]) {
-                return colors[projectName];
+            if (predefinedColors[projectName]) {
+                window.projectColors.set(projectName, predefinedColors[projectName]);
+                return predefinedColors[projectName];
             }
             
-            // Generate color from project name
+            // Generate distinct color for new projects
             let hash = 0;
-            for (let i = 0; i < (projectName || '').length; i++) {
+            for (let i = 0; i < (projectName || 'Unknown').length; i++) {
                 hash = projectName.charCodeAt(i) + ((hash << 5) - hash);
             }
-            const hue = hash % 360;
-            return `hsl(${hue}, 70%, 50%)`;
+            
+            // Use golden ratio for better color distribution
+            const golden_ratio = 0.618033988749895;
+            const hue = (hash * golden_ratio * 360) % 360;
+            
+            // Vary saturation and lightness for more variety
+            const saturation = 65 + (hash % 20); // 65-85%
+            const lightness = 45 + (hash % 15);  // 45-60%
+            
+            const color = `hsl(${Math.floor(hue)}, ${saturation}%, ${lightness}%)`;
+            window.projectColors.set(projectName, color);
+            
+            return color;
         }
 
         function getActivitySource(activity) {
