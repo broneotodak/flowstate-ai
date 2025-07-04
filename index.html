@@ -179,6 +179,55 @@
             flex: 1;
         }
 
+        .activity-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .project-badge {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+        }
+
+        .phase-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.625rem;
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--text-secondary);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-transform: capitalize;
+        }
+
+        .activity-task {
+            font-size: 1.125rem;
+            color: var(--text);
+            margin-bottom: 0.625rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .activity-details {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .activity-details span:not(:first-child)::before {
+            content: '• ';
+            margin: 0 0.5rem;
+        }
+
         .activity-type {
             display: inline-block;
             padding: 0.25rem 0.75rem;
@@ -526,19 +575,27 @@
                 return;
             }
 
-            container.innerHTML = filteredActivities.map(activity => `
-                <div class="activity-item">
-                    <div class="activity-content">
-                        <span class="activity-type type-${activity.activity_type}">${formatActivityType(activity.activity_type)}</span>
-                        <div class="activity-description">${escapeHtml(activity.activity_description)}</div>
-                        <div class="activity-meta">
-                            ${activity.project_name ? `<strong>${activity.project_name}</strong> • ` : ''}
-                            ${getActivitySource(activity)}
+            container.innerHTML = filteredActivities.map(activity => {
+                // Generate color based on project name
+                const projectColor = getProjectColor(activity.project_name);
+                
+                return `
+                    <div class="activity-item">
+                        <div class="activity-content">
+                            <div class="activity-header">
+                                <span class="project-badge" style="background: ${projectColor}">${activity.project_name || 'Unknown'}</span>
+                                <span class="phase-indicator">${formatActivityType(activity.activity_type)}</span>
+                            </div>
+                            <div class="activity-task">${escapeHtml(activity.activity_description)}</div>
+                            <div class="activity-details">
+                                <span>${getActivitySource(activity)}</span>
+                                <span>${activity.metadata?.machine || 'Unknown'}</span>
+                            </div>
                         </div>
+                        <div class="activity-time">${formatTime(activity.created_at)}</div>
                     </div>
-                    <div class="activity-time">${formatTime(activity.created_at)}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Render machines
@@ -637,6 +694,31 @@
             return type.split('_').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1)
             ).join(' ');
+        }
+
+        function getProjectColor(projectName) {
+            // Generate consistent colors for projects
+            const colors = {
+                'flowstate-ai': '#4f46e5',        // Primary blue
+                'kenal-admin': '#10b981',         // Green
+                'FlowState': '#7c3aed',           // Purple
+                'TODAK': '#f59e0b',               // Amber
+                'cursor-project': '#ef4444',      // Red
+                'flowstate-ai-github': '#06b6d4', // Cyan
+            };
+            
+            // Return specific color or generate one based on project name
+            if (colors[projectName]) {
+                return colors[projectName];
+            }
+            
+            // Generate color from project name
+            let hash = 0;
+            for (let i = 0; i < (projectName || '').length; i++) {
+                hash = projectName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = hash % 360;
+            return `hsl(${hue}, 70%, 50%)`;
         }
 
         function getActivitySource(activity) {
