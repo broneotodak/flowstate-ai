@@ -414,7 +414,7 @@
         // Load activities
         async function loadActivities() {
             const { data, error } = await supabase
-                .from('activity_log')
+                .from('flowstate_activities')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(50);
@@ -431,7 +431,7 @@
         // Load machines
         async function loadMachines() {
             const { data, error } = await supabase
-                .from('user_machines')
+                .from('flowstate_machines')
                 .select('*')
                 .order('last_active', { ascending: false });
 
@@ -441,13 +441,21 @@
             }
 
             machines = data || [];
+            // Transform machine data to match expected format
+            machines = machines.map(m => ({
+                machine_name: m.machine_name,
+                last_active: m.last_active,
+                is_active: new Date(m.last_active) > new Date(Date.now() - 3600000), // Active if used in last hour
+                activity_count: m.activity_count,
+                last_project: m.last_project
+            }));
             renderMachines();
         }
 
         // Load current context
         async function loadCurrentContext() {
             const { data, error } = await supabase
-                .from('current_context')
+                .from('flowstate_current_context')
                 .select('*')
                 .single();
 
@@ -467,7 +475,7 @@
             today.setHours(0, 0, 0, 0);
             
             const { count: todayCount } = await supabase
-                .from('activity_log')
+                .from('flowstate_activities')
                 .select('*', { count: 'exact', head: true })
                 .gte('created_at', today.toISOString());
 
@@ -475,7 +483,7 @@
 
             // Active projects
             const { data: projects } = await supabase
-                .from('activity_log')
+                .from('flowstate_activities')
                 .select('project_name')
                 .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -484,7 +492,7 @@
 
             // Connected machines
             const { count: machineCount } = await supabase
-                .from('user_machines')
+                .from('flowstate_machines')
                 .select('*', { count: 'exact', head: true })
                 .eq('is_active', true);
 
@@ -492,7 +500,7 @@
 
             // Total commits
             const { count: commitCount } = await supabase
-                .from('activity_log')
+                .from('flowstate_activities')
                 .select('*', { count: 'exact', head: true })
                 .in('activity_type', ['git_commit', 'git_push']);
 
@@ -577,7 +585,7 @@
             supabase
                 .channel('activity_changes')
                 .on('postgres_changes', 
-                    { event: 'INSERT', schema: 'public', table: 'activity_log' },
+                    { event: 'INSERT', schema: 'public', table: 'context_embeddings', filter: 'type=eq.activity' },
                     (payload) => {
                         activities.unshift(payload.new);
                         if (activities.length > 50) activities.pop();
