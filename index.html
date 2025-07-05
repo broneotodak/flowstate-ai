@@ -465,7 +465,7 @@
                             ${isActive ? '<div class="w-2 h-2 bg-green-500 rounded-full pulse"></div>' : ''}
                         </div>
                         <div class="mt-2 text-xs text-gray-500">
-                            Last: ${lastActive} • ${machine.activity_count} activities
+                            Last: ${lastActive}
                         </div>
                     </div>
                 `;
@@ -669,7 +669,7 @@
             const container = document.getElementById('github-projects-list');
             
             if (!projects || projects.length === 0) {
-                container.innerHTML = '<div class="text-center py-4 text-gray-500">No GitHub activity today</div>';
+                container.innerHTML = '<div class="text-center py-4 text-gray-500">No GitHub activity in the last 2 hours</div>';
                 return;
             }
             
