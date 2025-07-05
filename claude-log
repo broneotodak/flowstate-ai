@@ -1,0 +1,14 @@
+#!/usr/bin/env node
+
+// Quick Claude Code activity logger
+const { quickSave } = require('./claude-code-memory-saver.js');
+
+const args = process.argv.slice(2);
+
+if (args.length === 0) {
+  console.log('Usage: claude-log "description of what you did"');
+  console.log('Example: claude-log "Fixed memory sync issue in FlowState"');
+  process.exit(1);
+}
+
+quickSave(args.join(' '));
