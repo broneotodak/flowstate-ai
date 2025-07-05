@@ -229,7 +229,7 @@
         <!-- Current Development Projects -->
         <div class="glass rounded-xl p-6 mb-8 card-gradient" id="current-context">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold">Active Development</h2>
+                <h2 class="text-xl font-semibold">Active Development (Last 2 Hours)</h2>
                 <div class="text-4xl opacity-20">💻</div>
             </div>
             <div id="current-projects-list" class="space-y-4">
@@ -474,14 +474,14 @@
         
         // Load current context
         async function loadCurrentContext() {
-            // Get recent contexts from last 8 hours (full work day)
-            const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
+            // Get recent contexts from last 2 hours (active development)
+            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
             
             // Get all recent activities with machine info
             const { data: activities, error } = await supabase
                 .from('activity_log')
                 .select('*')
-                .gte('created_at', eightHoursAgo)
+                .gte('created_at', twoHoursAgo)
                 .order('created_at', { ascending: false })
                 .limit(200);
             
@@ -505,8 +505,9 @@
                 const browserActivities = [];
                 
                 activities.forEach(activity => {
-                    // Skip invalid projects
+                    // Skip invalid projects and system activities
                     if (activity.project_name === 'cursor-project') return;
+                    if (activity.activity_type === 'memory_sync') return;
                     
                     // Check if this is a browser/GitHub activity
                     const isBrowserActivity = (
@@ -578,8 +579,15 @@
                 });
                 
                 // Render both sections
+                // Only show projects as "active" if they have recent activity
+                const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
                 const devContexts = Object.values(devProjectContexts)
-                    .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
+                    .filter(context => {
+                        // Only show if there's been activity in the last 2 hours
+                        return new Date(context.last_updated) > new Date(Date.now() - 2 * 60 * 60 * 1000);
+                    })
+                    .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated))
+                    .slice(0, 3); // Maximum 3 active projects
                     
                 const githubContexts = Object.values(githubProjects)
                     .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated));
