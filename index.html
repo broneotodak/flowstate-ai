@@ -491,13 +491,15 @@
             }
             
             if (!activities || activities.length === 0) {
-                console.log('No activities found in the last 8 hours');
+                console.log('No activities found in the last 2 hours');
                 renderCurrentContexts([]);
                 renderGitHubActivity([]);
                 return;
             }
             
             console.log(`Found ${activities.length} activities`);
+            console.log('First activity:', activities[0]);
+            console.log('Two hours ago filter:', twoHoursAgo);
             
             if (activities) {
                 // Separate development activities from browser activities
@@ -584,7 +586,9 @@
                 const devContexts = Object.values(devProjectContexts)
                     .filter(context => {
                         // Only show if there's been activity in the last 2 hours
-                        return new Date(context.last_updated) > new Date(Date.now() - 2 * 60 * 60 * 1000);
+                        // Fix timezone issue by ensuring UTC comparison
+                        const lastUpdated = new Date(context.last_updated.includes('Z') ? context.last_updated : context.last_updated + 'Z');
+                        return lastUpdated > new Date(Date.now() - 2 * 60 * 60 * 1000);
                     })
                     .sort((a, b) => new Date(b.last_updated) - new Date(a.last_updated))
                     .slice(0, 3); // Maximum 3 active projects
@@ -817,7 +821,8 @@
         
         // Helper functions
         function formatTime(timestamp) {
-            const date = new Date(timestamp);
+            // Ensure timestamp is treated as UTC if it doesn't have timezone
+            const date = new Date(timestamp.includes('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z');
             const now = new Date();
             const diff = now - date;
             
