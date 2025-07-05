@@ -372,7 +372,7 @@
         // Load activities
         async function loadActivities() {
             const { data, error } = await supabase
-                .from('flowstate_activities')
+                .from('activity_log')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(50);
@@ -429,7 +429,7 @@
         // Load machines
         async function loadMachines() {
             const { data, error } = await supabase
-                .from('flowstate_machines')
+                .from('user_machines')
                 .select('*')
                 .order('last_active', { ascending: false });
             
@@ -479,7 +479,7 @@
             
             // Get all recent activities with machine info
             const { data: activities, error } = await supabase
-                .from('flowstate_activities')
+                .from('activity_log')
                 .select('*')
                 .gte('created_at', eightHoursAgo)
                 .order('created_at', { ascending: false })
@@ -739,10 +739,11 @@
             supabase
                 .channel('activities')
                 .on('postgres_changes', 
-                    { event: '*', schema: 'public', table: 'context_embeddings', filter: 'type=eq.activity' },
+                    { event: '*', schema: 'public', table: 'activity_log' },
                     payload => {
                         loadActivities();
                         loadStats();
+                        loadCurrentContext();
                     }
                 )
                 .subscribe();
@@ -751,7 +752,7 @@
             supabase
                 .channel('machines')
                 .on('postgres_changes',
-                    { event: '*', schema: 'public', table: 'context_embeddings', filter: 'type=eq.machine' },
+                    { event: '*', schema: 'public', table: 'user_machines' },
                     payload => {
                         loadMachines();
                         loadStats();
