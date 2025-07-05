@@ -485,7 +485,21 @@
                 .order('created_at', { ascending: false })
                 .limit(200);
             
-            if (!error && activities) {
+            if (error) {
+                console.error('Error loading activities:', error);
+                return;
+            }
+            
+            if (!activities || activities.length === 0) {
+                console.log('No activities found in the last 8 hours');
+                renderCurrentContexts([]);
+                renderGitHubActivity([]);
+                return;
+            }
+            
+            console.log(`Found ${activities.length} activities`);
+            
+            if (activities) {
                 // Separate development activities from browser activities
                 const devActivities = [];
                 const browserActivities = [];
