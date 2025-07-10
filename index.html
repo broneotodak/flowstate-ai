@@ -9,6 +9,9 @@
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- Configuration -->
+    <script src="config.js"></script>
+    
     <!-- Tailwind CSS -->
     <!-- Note: For production, consider installing Tailwind via npm. CDN is used here for simplicity -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -303,9 +306,13 @@
     </div>
     
     <script>
-        // Supabase configuration - using anon key for client-side
-        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6YW1hbXltZnpoZWx2a3dwdmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjUxMDExNjEsImV4cCI6MjA0MDY3NzE2MX0.qRN_6vfRRjyMA7R0N8c5B9LBLGnhNMEl85ai4DqILU4';
+        // Supabase configuration from environment variables
+        const SUPABASE_URL = window.FLOWSTATE_CONFIG?.SUPABASE_URL || 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const SUPABASE_ANON_KEY = window.FLOWSTATE_CONFIG?.SUPABASE_ANON_KEY || 'YOUR_ANON_KEY';
+        
+        if (!window.FLOWSTATE_CONFIG || !window.FLOWSTATE_CONFIG.SUPABASE_ANON_KEY || window.FLOWSTATE_CONFIG.SUPABASE_ANON_KEY === '') {
+            console.error('FlowState: Missing configuration. Please set environment variables in Netlify.');
+        }
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
