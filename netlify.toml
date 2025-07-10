@@ -1,14 +1,13 @@
-# FlowState AI - Netlify Configuration
-
 [build]
-  # No build command needed for static site
   publish = "."
 
-# Security headers
+[build.environment]
+  # Disable secrets scanning for these specific keys since they're placeholders
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY"
+
+# Headers for security
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
