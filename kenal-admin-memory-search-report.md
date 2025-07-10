@@ -4,7 +4,7 @@
 This report contains SQL queries and analysis to search for any memories related to the Kenal Admin project in the pgvector database.
 
 ## Database Connection Details
-- **Supabase URL**: https://uzamamymfzhelvkwpvgt.supabase.co
+- **Supabase URL**: https://YOUR_PROJECT_ID.supabase.co
 - **Database**: FlowState AI tracking system
 - **Key Tables**: 
   - `context_embeddings` - Stores AI conversation memories with pgvector embeddings

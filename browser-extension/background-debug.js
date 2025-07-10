@@ -1,6 +1,6 @@
 // FlowState Browser Extension - Background Service Worker (Debug Version)
 
-const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
 const CHECK_INTERVAL = 30000; // Check every 30 seconds
 const ACTIVITY_INTERVAL = 300000; // Log activity every 5 minutes
 const DEBUG = true; // Enable debug logging

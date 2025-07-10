@@ -5,11 +5,11 @@
 console.log('🔑 Supabase Keys for Netlify Environment Variables:\n');
 
 console.log('1. NEXT_PUBLIC_SUPABASE_URL:');
-console.log('   https://uzamamymfzhelvkwpvgt.supabase.co');
+console.log('   https://YOUR_PROJECT_ID.supabase.co');
 
 console.log('\n2. NEXT_PUBLIC_SUPABASE_ANON_KEY:');
 console.log('   You need the "anon" or "public" key from your Supabase project');
-console.log('   Find it at: https://app.supabase.com/project/uzamamymfzhelvkwpvgt/settings/api');
+console.log('   Find it at: https://app.supabase.com/project/YOUR_PROJECT_ID/settings/api');
 console.log('   It usually starts with "eyJ..."');
 
 console.log('\n3. SUPABASE_SERVICE_ROLE_KEY (optional):');

@@ -29,7 +29,7 @@ cat > .git/hooks/flowstate-track.sh << 'EOF'
 #!/bin/bash
 
 # FlowState Activity Tracker
-SUPABASE_URL="https://uzamamymfzhelvkwpvgt.supabase.co"
+SUPABASE_URL="https://YOUR_PROJECT_ID.supabase.co"
 SUPABASE_SERVICE_KEY="YOUR_SERVICE_KEY_HERE"
 USER_ID="neo_todak"
 

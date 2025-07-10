@@ -1,7 +1,7 @@
 # How to Execute the SQL Fix
 
 ## Option 1: Supabase Dashboard (Recommended)
-1. Go to your Supabase project: https://app.supabase.com/project/uzamamymfzhelvkwpvgt
+1. Go to your Supabase project: https://app.supabase.com/project/YOUR_PROJECT_ID
 2. Navigate to SQL Editor (left sidebar)
 3. Copy and paste the contents of `sql/fix-activity-log-trigger.sql`
 4. Run the query
@@ -10,14 +10,14 @@
 ## Option 2: Using psql with connection string
 If you have the full database connection string:
 ```bash
-psql "postgresql://postgres:[password]@db.uzamamymfzhelvkwpvgt.supabase.co:5432/postgres" -f sql/fix-activity-log-trigger.sql
+psql "postgresql://postgres:[password]@db.YOUR_PROJECT_ID.supabase.co:5432/postgres" -f sql/fix-activity-log-trigger.sql
 ```
 
 ## Option 3: Using Supabase CLI (requires project linking)
 ```bash
 # First, you'd need to login and link the project
 supabase login
-supabase link --project-ref uzamamymfzhelvkwpvgt
+supabase link --project-ref YOUR_PROJECT_ID
 
 # Then execute SQL
 supabase db execute -f sql/fix-activity-log-trigger.sql

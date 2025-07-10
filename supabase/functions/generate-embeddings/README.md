@@ -13,7 +13,7 @@ brew install supabase/tap/supabase
 ```bash
 # From the flowstate-ai-github directory
 supabase login
-supabase link --project-ref uzamamymfzhelvkwpvgt
+supabase link --project-ref YOUR_PROJECT_ID
 supabase functions deploy generate-embeddings --no-verify-jwt
 ```
 
@@ -30,7 +30,7 @@ Go to your Supabase Dashboard > Database > Webhooks and create webhooks for each
 - Name: `generate-embeddings-projects`
 - Table: `projects`
 - Events: Insert, Update
-- URL: `https://uzamamymfzhelvkwpvgt.supabase.co/functions/v1/generate-embeddings`
+- URL: `https://YOUR_PROJECT_ID.supabase.co/functions/v1/generate-embeddings`
 - Headers: 
   ```
   Content-Type: application/json
@@ -53,7 +53,7 @@ If you prefer to generate embeddings manually or in batch:
 
 ```bash
 # Generate for a specific project
-curl -X POST https://uzamamymfzhelvkwpvgt.supabase.co/functions/v1/generate-embeddings \
+curl -X POST https://YOUR_PROJECT_ID.supabase.co/functions/v1/generate-embeddings \
   -H "Authorization: Bearer YOUR_SERVICE_ROLE_KEY" \
   -H "Content-Type: application/json" \
   -d '{

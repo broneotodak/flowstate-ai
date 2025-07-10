@@ -7,13 +7,13 @@ echo "🔍 Checking ClaudeN memories..."
 
 # Fetch recent memories
 MEMORIES=$(curl -s -X GET \
-  "https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/claude_desktop_memory?user_id=eq.neo_todak&order=created_at.desc&limit=5" \
+  "https://YOUR_PROJECT_ID.supabase.co/rest/v1/claude_desktop_memory?user_id=eq.neo_todak&order=created_at.desc&limit=5" \
   -H "apikey: $FLOWSTATE_SERVICE_KEY" \
   -H "Authorization: Bearer $FLOWSTATE_SERVICE_KEY")
 
 # Count total
 TOTAL=$(curl -s -X GET \
-  "https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/claude_desktop_memory?user_id=eq.neo_todak&select=count" \
+  "https://YOUR_PROJECT_ID.supabase.co/rest/v1/claude_desktop_memory?user_id=eq.neo_todak&select=count" \
   -H "apikey: $FLOWSTATE_SERVICE_KEY" \
   -H "Authorization: Bearer $FLOWSTATE_SERVICE_KEY" \
   -H "Prefer: count=exact" | python3 -c "import json, sys; print(json.load(sys.stdin)[0]['count'])")

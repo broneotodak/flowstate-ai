@@ -36,7 +36,7 @@ supabase functions deploy github-webhook --no-verify-jwt
 
 2. Add webhook to your GitHub repos:
    - Go to Settings → Webhooks
-   - Add webhook URL: `https://uzamamymfzhelvkwpvgt.supabase.co/functions/v1/github-webhook`
+   - Add webhook URL: `https://YOUR_PROJECT_ID.supabase.co/functions/v1/github-webhook`
    - Select events: Push, Pull Request, Issues
    - Content type: application/json
 

@@ -38,7 +38,7 @@ async function runDiagnostics() {
         if (storage.serviceKey) {
             log('Testing Supabase connection...');
             const response = await fetch(
-                'https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/flowstate_activities?limit=1',
+                'https://YOUR_PROJECT_ID.supabase.co/rest/v1/flowstate_activities?limit=1',
                 {
                     headers: {
                         'apikey': storage.serviceKey,

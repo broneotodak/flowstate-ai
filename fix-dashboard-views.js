@@ -5,7 +5,7 @@
 const https = require('https');
 const fs = require('fs');
 
-const SUPABASE_URL = process.env.FLOWSTATE_SUPABASE_URL || 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = process.env.FLOWSTATE_SUPABASE_URL || 'https://YOUR_PROJECT_ID.supabase.co';
 const SERVICE_KEY = process.env.FLOWSTATE_SERVICE_KEY;
 
 if (!SERVICE_KEY) {

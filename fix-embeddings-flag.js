@@ -3,7 +3,7 @@
 // Fix has_embedding flag for FlowState activities
 const https = require('https');
 
-const SUPABASE_URL = process.env.FLOWSTATE_SUPABASE_URL || 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = process.env.FLOWSTATE_SUPABASE_URL || 'https://YOUR_PROJECT_ID.supabase.co';
 const SERVICE_KEY = process.env.FLOWSTATE_SERVICE_KEY;
 
 async function fixEmbeddings() {

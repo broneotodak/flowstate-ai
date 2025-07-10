@@ -1,6 +1,6 @@
 // Test script to verify Supabase API connection and service key
 
-const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
 
 async function testAPIConnection(serviceKey) {
     console.log('Testing API connection with service key...');

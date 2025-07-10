@@ -32,7 +32,7 @@
 
 ## Important Context
 - Service key stored in `~/.flowstate/config`
-- Supabase project: uzamamymfzhelvkwpvgt
+- Supabase project: YOUR_PROJECT_ID
 - GitHub auto-deploys to flowstate.neotodak.com
 - Activity trigger was causing "parent_name ambiguous" - now disabled
 

@@ -34,7 +34,7 @@
 
 ## 🚀 Current Status
 - **Dashboard**: flowstate.neotodak.com (working perfectly)
-- **Database**: uzamamymfzhelvkwpvgt.supabase.co
+- **Database**: YOUR_PROJECT_ID.supabase.co
 - **Git Hooks**: Active on flowstate-ai-github repo
 - **Context**: Updating automatically with each commit
 - **Last Task**: "Fix timezone parsing - append Z to timestamps"

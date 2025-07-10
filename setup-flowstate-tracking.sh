@@ -58,7 +58,7 @@ flowstate_log_command() {
           }
         });
         
-        const url = new URL('https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/activities');
+        const url = new URL('https://YOUR_PROJECT_ID.supabase.co/rest/v1/activities');
         const req = https.request({
           hostname: url.hostname,
           path: url.pathname,

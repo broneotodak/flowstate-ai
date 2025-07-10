@@ -15,7 +15,7 @@ supabase login
 ### 2. Link your project
 ```bash
 cd /Users/broneotodak/Projects/flowstate-ai-github
-supabase link --project-ref uzamamymfzhelvkwpvgt
+supabase link --project-ref YOUR_PROJECT_ID
 ```
 
 ### 3. Set up environment variables
@@ -62,7 +62,7 @@ DECLARE
     edge_function_url TEXT;
 BEGIN
     -- Get the Edge Function URL
-    edge_function_url := 'https://uzamamymfzhelvkwpvgt.supabase.co/functions/v1/generate-embeddings';
+    edge_function_url := 'https://YOUR_PROJECT_ID.supabase.co/functions/v1/generate-embeddings';
     
     -- Extract content based on table
     IF TG_TABLE_NAME = 'projects' THEN
@@ -106,7 +106,7 @@ CREATE OR REPLACE FUNCTION generate_all_embeddings_via_edge_function()
 RETURNS void AS $$
 DECLARE
     rec RECORD;
-    edge_function_url TEXT := 'https://uzamamymfzhelvkwpvgt.supabase.co/functions/v1/generate-embeddings';
+    edge_function_url TEXT := 'https://YOUR_PROJECT_ID.supabase.co/functions/v1/generate-embeddings';
 BEGIN
     -- Generate for projects
     FOR rec IN SELECT id, name, description FROM projects LOOP

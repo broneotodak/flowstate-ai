@@ -25,7 +25,7 @@ echo "🔄 Fetching memories from Supabase..."
 
 # Fetch memories
 MEMORIES=$(curl -s -X GET \
-  "https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/claude_desktop_memory?user_id=eq.neo_todak&order=created_at.desc&limit=1000" \
+  "https://YOUR_PROJECT_ID.supabase.co/rest/v1/claude_desktop_memory?user_id=eq.neo_todak&order=created_at.desc&limit=1000" \
   -H "apikey: $FLOWSTATE_SERVICE_KEY" \
   -H "Authorization: Bearer $FLOWSTATE_SERVICE_KEY")
 

@@ -3,7 +3,7 @@
 // CRITICAL: Update todak-ai memory with the TRUTH about FlowState database
 const https = require('https');
 
-const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
 const SERVICE_KEY = process.env.FLOWSTATE_SERVICE_KEY;
 
 const databaseTruth = {

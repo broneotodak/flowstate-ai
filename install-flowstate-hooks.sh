@@ -47,7 +47,7 @@ JSON_EOF
 
 # Send to Supabase
 curl -s -X POST \
-  "https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/activities" \
+  "https://YOUR_PROJECT_ID.supabase.co/rest/v1/activities" \
   -H "apikey: $FLOWSTATE_SERVICE_KEY" \
   -H "Authorization: Bearer $FLOWSTATE_SERVICE_KEY" \
   -H "Content-Type: application/json" \
@@ -90,7 +90,7 @@ JSON_EOF
 )
 
 curl -s -X POST \
-  "https://uzamamymfzhelvkwpvgt.supabase.co/rest/v1/activities" \
+  "https://YOUR_PROJECT_ID.supabase.co/rest/v1/activities" \
   -H "apikey: $FLOWSTATE_SERVICE_KEY" \
   -H "Authorization: Bearer $FLOWSTATE_SERVICE_KEY" \
   -H "Content-Type: application/json" \

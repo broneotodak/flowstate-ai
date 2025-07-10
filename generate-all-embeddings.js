@@ -1,7 +1,7 @@
 // FlowState AI - Batch Embedding Generation Script
 // This script generates AI embeddings for all existing data in your database
 
-const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
 const SUPABASE_SERVICE_KEY = 'YOUR_SERVICE_ROLE_KEY'; // Replace with your service role key
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-embeddings`;
 

@@ -7,7 +7,7 @@ I'm Neo Todak, and we just finished a major session working on FlowState AI (htt
 - **Location**: H:\Projects\Active\flowstate-ai
 - **GitHub**: https://github.com/broneotodak/flowstate-ai
 - **Deployment**: Auto-deploys via Netlify to flowstate.neotodak.com
-- **Database**: Supabase project uzamamymfzhelvkwpvgt
+- **Database**: Supabase project YOUR_PROJECT_ID
 
 ## Features Currently Implemented
 1. **Core Dashboard** ✓

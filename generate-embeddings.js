@@ -3,7 +3,7 @@
 // FlowState AI - Batch Embedding Generator (Node.js version)
 // Run with: node generate-embeddings.js
 
-const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
 const EDGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/generate-embeddings`;
 
 // IMPORTANT: Set your service role key here
