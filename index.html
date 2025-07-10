@@ -395,11 +395,17 @@
             const container = document.getElementById('activity-list');
             const searchTerm = document.getElementById('activity-search').value.toLowerCase();
             
-            const filtered = activities.filter(activity => 
-                activity.activity_description.toLowerCase().includes(searchTerm) ||
-                activity.project_name.toLowerCase().includes(searchTerm) ||
-                activity.activity_type.toLowerCase().includes(searchTerm)
-            );
+            const filtered = activities.filter(activity => {
+                const searchableText = [
+                    activity.category || '',
+                    activity.content || '',
+                    activity.title || '',
+                    activity.metadata?.project || '',
+                    activity.metadata?.machine || ''
+                ].join(' ').toLowerCase();
+                
+                return searchableText.includes(searchTerm);
+            });
             
             if (filtered.length === 0) {
                 container.innerHTML = '<div class="text-center py-8 text-gray-500">No activities found</div>';
@@ -407,9 +413,11 @@
             }
             
             container.innerHTML = filtered.map(activity => {
-                const colors = getProjectColor(activity.project_name);
+                const projectName = activity.metadata?.project || activity.category || 'General';
+                const colors = getProjectColor(projectName);
                 const time = formatTime(activity.created_at);
-                const icon = getActivityIcon(activity.activity_type);
+                const activityType = activity.memory_type || 'note';
+                const icon = getActivityIcon(activityType);
                 
                 return `
                     <div class="glass rounded-lg p-4 activity-item hover:bg-white/5 transition-all">
@@ -418,11 +426,14 @@
                                 <div class="flex items-center gap-3 mb-2">
                                     <span class="text-xl">${icon}</span>
                                     <span class="project-badge" style="background: ${colors.bg}; border-color: ${colors.border}; color: ${colors.text};">
-                                        ${activity.project_name}
+                                        ${projectName}
                                     </span>
-                                    <span class="text-xs text-gray-500">${activity.activity_type}</span>
+                                    <span class="text-xs text-gray-500">${activityType}</span>
                                 </div>
-                                <div class="text-sm text-gray-300 mb-1">${activity.activity_description}</div>
+                                <div class="text-sm text-gray-300 mb-1">
+                                    <strong>${activity.title || 'Memory'}</strong>
+                                    ${activity.content ? `: ${activity.content.substring(0, 150)}${activity.content.length > 150 ? '...' : ''}` : ''}
+                                </div>
                                 <div class="text-xs text-gray-500">
                                     ${activity.metadata?.machine || 'Unknown Machine'} • ${time}
                                 </div>
@@ -870,12 +881,22 @@
         
         function getActivityIcon(type) {
             const icons = {
+                // Original activity types
                 'git_commit': '💾',
                 'git_push': '🚀',
                 'browser_activity': '🌐',
                 'ai_conversation': '🤖',
                 'terminal_command': '⌨️',
                 'file_edit': '✏️',
+                // Memory types from claude_desktop_memory
+                'technical_solution': '🔧',
+                'code_review': '👀',
+                'bug_fix': '🐛',
+                'feature': '✨',
+                'note': '📝',
+                'idea': '💡',
+                'todo': '📋',
+                'learning': '📚',
                 'debug': '🐛',
                 'meeting': '📅',
                 'research': '🔍'
