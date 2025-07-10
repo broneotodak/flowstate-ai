@@ -247,7 +247,7 @@
         <!-- GitHub Activity -->
         <div class="glass rounded-xl p-6 mb-8" id="github-activity">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-xl font-semibold">GitHub Activity</h2>
+                <h2 class="text-xl font-semibold">Git & GitHub Activity</h2>
                 <div class="text-4xl opacity-20">🐙</div>
             </div>
             <div id="github-projects-list" class="space-y-3">
@@ -559,8 +559,13 @@
                     if (activityType === 'memory_sync') return;
                     
                     // Check if this is a browser/GitHub activity
-                    const isBrowserActivity = (
+                    const isGitHubActivity = (
                         activityType === 'browser_activity' || 
+                        activityType === 'git_commit' ||
+                        activityType === 'git_push' ||
+                        activityType === 'github_activity' ||
+                        activity.category === 'git_commit' ||
+                        activity.category === 'git_push' ||
                         activity.metadata?.source === 'browser_extension' ||
                         activity.tool === 'Browser' ||
                         (activity.metadata?.tool === 'Chrome' || 
@@ -569,7 +574,7 @@
                          activity.metadata?.tool === 'Edge')
                     );
                     
-                    if (isBrowserActivity) {
+                    if (isGitHubActivity) {
                         browserActivities.push(activity);
                     } else {
                         devActivities.push(activity);
