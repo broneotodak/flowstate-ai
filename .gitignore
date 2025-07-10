@@ -145,3 +145,16 @@ index-*.html.backup-*
 
 # Files with hardcoded secrets
 setup-office-pc-logging.md
+
+# Files that might contain secrets
+update-service-key.sh
+*service-key*.sh
+*-backup.html
+*backup*.html
+*.bak
+*.backup
+
+# Temporary and test files
+working-*.html
+test-*.html
+debug-*.html

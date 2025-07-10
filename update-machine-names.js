@@ -3,7 +3,7 @@
 // Update machine names to be more meaningful
 const https = require('https');
 
-const SUPABASE_URL = process.env.FLOWSTATE_SUPABASE_URL || 'https://uzamamymfzhelvkwpvgt.supabase.co';
+const SUPABASE_URL = process.env.FLOWSTATE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
 const SERVICE_KEY = process.env.FLOWSTATE_SERVICE_KEY;
 
 if (!SERVICE_KEY) {
