@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FlowState Dashboard Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>FlowState Dashboard Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
+        const SUPABASE_SERVICE_KEY = prompt('Enter your FLOWSTATE_SERVICE_KEY:');
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+        
+        async function testQueries() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h2>Testing Dashboard Queries...</h2>';
+            
+            // Today's activities
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            const { count: todayCount } = await supabase
+                .from('flowstate_activities')
+                .select('*', { count: 'exact', head: true })
+                .gte('created_at', today.toISOString());
+            
+            results.innerHTML += `<p>Today's Activities: ${todayCount}</p>`;
+            
+            // Total commits
+            const { count: commitCount } = await supabase
+                .from('flowstate_activities')
+                .select('*', { count: 'exact', head: true })
+                .eq('activity_type', 'git_commit');
+            
+            results.innerHTML += `<p>Total Commits: ${commitCount}</p>`;
+            
+            // Active projects
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            const { data: projectData } = await supabase
+                .from('flowstate_activities')
+                .select('project_name')
+                .gte('created_at', sevenDaysAgo.toISOString());
+            
+            const uniqueProjects = [...new Set(projectData.map(p => p.project_name))];
+            results.innerHTML += `<p>Active Projects: ${uniqueProjects.length}</p>`;
+            
+            // Connected machines
+            const { count: machineCount } = await supabase
+                .from('user_machines')
+                .select('*', { count: 'exact', head: true })
+                .eq('is_active', true);
+            
+            results.innerHTML += `<p>Connected Machines: ${machineCount}</p>`;
+        }
+        
+        if (SUPABASE_SERVICE_KEY) {
+            testQueries();
+        }
+    </script>
+</body>
+</html>

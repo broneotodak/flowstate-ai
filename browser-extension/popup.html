@@ -4,52 +4,135 @@
     <meta charset="UTF-8">
     <style>
         body {
-            width: 300px;
+            width: 350px;
             padding: 15px;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
-        }
-        h2 {
-            margin: 0 0 15px 0;
-            color: #2196F3;
-            font-size: 18px;
-        }
-        .status {
-            padding: 15px;
             background: #f5f5f5;
-            border-radius: 8px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
         }
-        .status.active {
-            background: #e3f2fd;
-            border: 1px solid #2196F3;
+        h2 {
+            margin: 0;
+            color: #2196F3;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #2196F3;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .refresh-btn:hover {
+            background: rgba(33, 150, 243, 0.1);
+        }
+        .refresh-btn.spinning {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .current-status {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .project-name {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
+            color: #333;
             margin-bottom: 5px;
         }
-        .task {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-        }
-        .confidence {
+        .status-meta {
             font-size: 12px;
+            color: #666;
+        }
+        .activities {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .activity-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        .activity-item:hover {
+            background: #f8f9fa;
+        }
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+        .activity-project {
+            font-weight: 600;
+            color: #2196F3;
+            font-size: 14px;
+        }
+        .activity-time {
+            font-size: 11px;
             color: #999;
         }
-        .confidence-bar {
-            width: 100%;
-            height: 4px;
-            background: #ddd;
-            border-radius: 2px;
-            margin-top: 5px;
-            overflow: hidden;
+        .activity-description {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 4px;
         }
-        .confidence-fill {
-            height: 100%;
-            background: #2196F3;
-            transition: width 0.3s;
+        .activity-machine {
+            font-size: 11px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .machine-icon {
+            font-size: 12px;
+        }
+        .no-activities {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        .settings {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
         }
         button {
             width: 100%;
@@ -60,32 +143,23 @@
             color: white;
             cursor: pointer;
             margin-bottom: 10px;
+            font-size: 14px;
         }
         button:hover {
             background: #1976D2;
         }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        button.secondary {
+            background: #fff;
+            color: #2196F3;
+            border: 1px solid #2196F3;
         }
-        .settings {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-        }
-        input {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
+        button.secondary:hover {
+            background: #f5f5f5;
         }
         .toggle {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
         }
         .switch {
             position: relative;
@@ -125,26 +199,34 @@
         input:checked + .slider:before {
             transform: translateX(20px);
         }
-        .no-context {
+        .loading {
             text-align: center;
-            color: #999;
-            padding: 20px;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 13px;
         }
     </style>
 </head>
 <body>
-    <h2>🌊 FlowState Tracker</h2>
-    
-    <div id="contextDisplay" class="status">
-        <div class="no-context">Detecting context...</div>
+    <div class="header">
+        <h2>🌊 FlowState Viewer</h2>
+        <button class="refresh-btn" id="refreshBtn" title="Refresh">↻</button>
     </div>
     
-    <button id="refreshBtn">Refresh Context</button>
-    <button id="logBtn">Log Activity Now</button>
+    <div id="mainContent">
+        <div class="loading">Loading FlowState...</div>
+    </div>
     
     <div class="settings">
         <div class="toggle">
-            <span>Enable Tracking</span>
+            <span>Auto-refresh</span>
             <label class="switch">
                 <input type="checkbox" id="enableToggle" checked>
                 <span class="slider"></span>
@@ -153,6 +235,7 @@
         
         <input type="password" id="serviceKey" placeholder="Supabase Service Key">
         <button id="saveBtn">Save Settings</button>
+        <button id="dashboardBtn" class="secondary">Open Dashboard →</button>
     </div>
     
     <script src="popup.js"></script>

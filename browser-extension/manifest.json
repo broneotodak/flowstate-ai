@@ -1,17 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "FlowState Context Tracker",
-  "version": "1.0.2",
-  "description": "Automatically tracks your current project context based on browser activity",
+  "name": "FlowState Status Viewer",
+  "version": "2.0.0",
+  "description": "View your current FlowState activities across all machines",
   "permissions": [
-    "tabs",
     "storage",
     "alarms"
   ],
   "host_permissions": [
-    "https://github.com/*",
-    "https://claude.ai/*",
-    "http://localhost/*",
     "https://*.supabase.co/*"
   ],
   "background": {
@@ -29,5 +25,6 @@
     "16": "icon16.png",
     "48": "icon48.png",
     "128": "icon128.png"
-  }
+  },
+  "options_page": "debug.html"
 }

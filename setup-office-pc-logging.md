@@ -6,8 +6,8 @@
 Create file: `C:\Users\[YourUsername]\.flowstate\config.bat`
 ```batch
 @echo off
-set FLOWSTATE_SUPABASE_URL=https://uzamamymfzhelvkwpvgt.supabase.co
-set FLOWSTATE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6YW1hbXltZnpoZWx2a3dwdmd0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODE0MzA2OCwiZXhwIjoyMDYzNzE5MDY4fQ.-r8qd7sa3giTKBlxm6N-yzxVwV4Lvy12N7Oker0qwhw
+set FLOWSTATE_SUPABASE_URL=YOUR_SUPABASE_URL_HERE
+set FLOWSTATE_SERVICE_KEY=YOUR_SUPABASE_KEY_HERE
 ```
 
 ### 2. Install Node.js (if not already installed)

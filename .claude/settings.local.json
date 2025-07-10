@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(cat:*)",
+      "Bash(zip:*)",
+      "Bash(node:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(mkdir:*)",
+      "Bash(open:*)",
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "Bash(./create-xcode-project.sh:*)",
+      "Bash(./create-all-files.sh:*)"
+    ],
+    "deny": []
+  }
+}
