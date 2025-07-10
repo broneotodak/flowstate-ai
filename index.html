@@ -379,7 +379,7 @@
         // Load activities
         async function loadActivities() {
             const { data, error } = await supabase
-                .from('activity_log')
+                .from('claude_desktop_memory')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(50);
@@ -437,7 +437,7 @@
         async function loadMachines() {
             // Get unique machines from recent activities
             const { data, error } = await supabase
-                .from('activity_log')
+                .from('claude_desktop_memory')
                 .select('metadata, created_at')
                 .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
                 .order('created_at', { ascending: false });
@@ -513,7 +513,7 @@
             
             // Get all recent activities with machine info
             const { data: activities, error } = await supabase
-                .from('activity_log')
+                .from('claude_desktop_memory')
                 .select('*')
                 .gte('created_at', twoHoursAgo)
                 .order('created_at', { ascending: false })
