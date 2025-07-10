@@ -553,13 +553,16 @@
                 
                 activities.forEach(activity => {
                     // Skip invalid projects and system activities
-                    if (activity.project_name === 'cursor-project') return;
-                    if (activity.activity_type === 'memory_sync') return;
+                    const projectName = activity.metadata?.project || activity.category;
+                    if (projectName === 'cursor-project') return;
+                    const activityType = activity.metadata?.activity_type || activity.memory_type;
+                    if (activityType === 'memory_sync') return;
                     
                     // Check if this is a browser/GitHub activity
                     const isBrowserActivity = (
-                        activity.activity_type === 'browser_activity' || 
+                        activityType === 'browser_activity' || 
                         activity.metadata?.source === 'browser_extension' ||
+                        activity.tool === 'Browser' ||
                         (activity.metadata?.tool === 'Chrome' || 
                          activity.metadata?.tool === 'Firefox' || 
                          activity.metadata?.tool === 'Safari' || 
@@ -577,7 +580,7 @@
                 const devProjectContexts = {};
                 devActivities.forEach(activity => {
                     // Normalize project names
-                    let project = activity.project_name;
+                    let project = activity.metadata?.project || activity.category || 'General';
                     if (project === 'flowstate-ai-github' || project === 'flowstate-ai') {
                         project = 'FlowState AI';
                     }
@@ -607,20 +610,20 @@
                 // Process GitHub activities
                 const githubProjects = {};
                 browserActivities.forEach(activity => {
-                    const project = activity.project_name;
+                    const project = activity.metadata?.project || activity.category || 'Browser Activity';
                     
                     if (!githubProjects[project]) {
                         githubProjects[project] = {
                             project_name: project,
                             count: 0,
-                            last_activity: activity.activity_description,
+                            last_activity: activity.title || activity.content?.substring(0, 100) || 'Browser activity',
                             last_updated: activity.created_at
                         };
                     }
                     
                     githubProjects[project].count++;
                     if (activity.created_at > githubProjects[project].last_updated) {
-                        githubProjects[project].last_activity = activity.activity_description;
+                        githubProjects[project].last_activity = activity.title || activity.content?.substring(0, 100) || 'Browser activity';
                         githubProjects[project].last_updated = activity.created_at;
                     }
                 });
@@ -679,7 +682,7 @@
                         
                         <div class="ml-9 space-y-2">
                             <div class="text-sm text-gray-300">
-                                <span class="text-gray-500">Task:</span> ${activity.activity_description}
+                                <span class="text-gray-500">Task:</span> ${activity.title || activity.content?.substring(0, 100) || 'Working...'}
                             </div>
                             
                             <div class="text-sm">
