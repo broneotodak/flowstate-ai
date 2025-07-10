@@ -161,7 +161,7 @@ function createActivityFromMemory(memory) {
       source: 'memory_sync',
       tool: tool,
       memory_id: memory.id,
-      machine: require('os').hostname(), // Use actual machine name
+      machine: memory.metadata?.machine || require('os').hostname(), // Preserve original machine // Use actual machine name
       timestamp: memory.created_at
     }
   };

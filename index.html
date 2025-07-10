@@ -305,7 +305,7 @@
     <script>
         // Supabase configuration
         const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
-        const SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV6YW1hbXltZnpoZWx2a3dwdmd0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODE0MzA2OCwiZXhwIjoyMDYzNzE5MDY4fQ.-r8qd7sa3giTKBlxm6N-yzxVwV4Lvy12N7Oker0qwhw';
+        const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
         
@@ -428,14 +428,41 @@
         
         // Load machines
         async function loadMachines() {
+            // Get unique machines from recent activities
             const { data, error } = await supabase
-                .from('user_machines')
-                .select('*')
-                .order('last_active', { ascending: false });
+                .from('activity_log')
+                .select('metadata, created_at')
+                .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+                .order('created_at', { ascending: false });
             
             if (!error && data) {
-                machines = data;
+                // Extract unique machines
+                const machineMap = new Map();
+                
+                data.forEach(activity => {
+                    const machineName = activity.metadata?.machine;
+                    if (machineName && machineName !== 'Unknown Machine') {
+                        if (!machineMap.has(machineName)) {
+                            machineMap.set(machineName, {
+                                machine_name: machineName,
+                                os: detectOS(machineName),
+                                is_active: true,
+                                last_active: activity.created_at
+                            });
+                        }
+                    }
+                });
+                
+                machines = Array.from(machineMap.values());
                 renderMachines();
+            }
+            
+            function detectOS(name) {
+                const lower = name.toLowerCase();
+                if (lower.includes('mac')) return 'macOS';
+                if (lower.includes('win') || lower.includes('pc')) return 'Windows';
+                if (lower.includes('linux') || lower.includes('ubuntu')) return 'Linux';
+                return 'Unknown';
             }
         }
         
@@ -748,7 +775,7 @@
             document.getElementById('active-projects').textContent = uniqueProjects.size;
             
             // Connected machines
-            document.getElementById('connected-machines').textContent = machines.filter(m => m.is_active).length;
+            document.getElementById('connected-machines').textContent = machines.length; // All are active from last 7 days
             
             // Total commits
             const { count: commitCount } = await supabase
@@ -778,7 +805,7 @@
             supabase
                 .channel('machines')
                 .on('postgres_changes',
-                    { event: '*', schema: 'public', table: 'user_machines' },
+                    { event: '*', schema: 'public', table: 'activity_log' },
                     payload => {
                         loadMachines();
                         loadStats();
