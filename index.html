@@ -306,13 +306,13 @@
     </div>
     
     <script>
-        // Supabase configuration from environment variables
-        const SUPABASE_URL = window.FLOWSTATE_CONFIG?.SUPABASE_URL || 'https://uzamamymfzhelvkwpvgt.supabase.co';
-        const SUPABASE_ANON_KEY = window.FLOWSTATE_CONFIG?.SUPABASE_ANON_KEY || 'YOUR_ANON_KEY';
-        
-        if (!window.FLOWSTATE_CONFIG || !window.FLOWSTATE_CONFIG.SUPABASE_ANON_KEY || window.FLOWSTATE_CONFIG.SUPABASE_ANON_KEY === '') {
-            console.error('FlowState: Missing configuration. Please set environment variables in Netlify.');
+        // Supabase configuration from config.js
+        if (!window.FLOWSTATE_CONFIG) {
+            console.error('FlowState: Missing config.js file');
         }
+        
+        const SUPABASE_URL = window.FLOWSTATE_CONFIG?.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.FLOWSTATE_CONFIG?.SUPABASE_ANON_KEY;
         
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
