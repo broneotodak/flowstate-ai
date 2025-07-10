@@ -1,6 +1,5 @@
 [build]
   publish = "."
-  command = "./build.sh"
 
 [build.environment]
   # Tell Netlify these are intentionally public environment variables
