@@ -1,7 +1,7 @@
 // FlowState Browser Extension - Status Viewer
 // Shows your current FlowState activities from all machines
 
-const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_URL = 'https://uzamamymfzhelvkwpvgt.supabase.co';
 const REFRESH_INTERVAL = 30000; // Refresh every 30 seconds
 
 let currentFlowState = {

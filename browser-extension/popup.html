@@ -3,174 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body {
-            width: 350px;
-            padding: 15px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            margin: 0;
-            background: #f5f5f5;
+        * {
+            box-sizing: border-box;
         }
+        
+        body {
+            width: 380px;
+            padding: 0;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-size: 14px;
+        }
+        
+        .container {
+            padding: 16px;
+        }
+        
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #333;
         }
-        h2 {
+        
+        .title {
             margin: 0;
-            color: #2196F3;
+            color: #4A9EFF;
             font-size: 18px;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 8px;
         }
+        
         .refresh-btn {
             background: none;
             border: none;
-            color: #2196F3;
+            color: #4A9EFF;
             cursor: pointer;
-            font-size: 20px;
-            padding: 5px;
-            border-radius: 4px;
-            transition: background 0.2s;
+            font-size: 18px;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
         }
+        
         .refresh-btn:hover {
-            background: rgba(33, 150, 243, 0.1);
+            background: rgba(74, 158, 255, 0.1);
+            transform: scale(1.05);
         }
-        .refresh-btn.spinning {
-            animation: spin 1s linear infinite;
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
         }
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        
+        .refresh-btn.loading {
+            animation: pulse 1.5s ease-in-out infinite;
+            pointer-events: none;
         }
-        .current-status {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
         }
-        .project-name {
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
+        
+        .status-overview {
+            background: linear-gradient(135deg, #2d2d2d, #252525);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #333;
         }
+        
+        .active-projects {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .project-chip {
+            background: rgba(74, 158, 255, 0.15);
+            color: #4A9EFF;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid rgba(74, 158, 255, 0.3);
+        }
+        
         .status-meta {
             font-size: 12px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .scroll-hint {
+            font-size: 11px;
             color: #666;
+            font-weight: 400;
         }
+        
         .activities {
-            background: white;
-            border-radius: 8px;
-            padding: 10px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            max-height: 300px;
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #333;
+            overflow: hidden;
+            margin-bottom: 16px;
+            max-height: 80px; /* Show roughly 1 activity */
             overflow-y: auto;
+            position: relative;
         }
+        
+        .activities::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(transparent, rgba(37, 37, 37, 0.8));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .activities.has-more::after {
+            opacity: 1;
+        }
+        
         .activity-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
-            transition: background 0.2s;
+            padding: 12px 16px;
+            border-bottom: 1px solid #333;
+            transition: all 0.2s ease;
+            position: relative;
         }
+        
         .activity-item:last-child {
             border-bottom: none;
         }
+        
         .activity-item:hover {
-            background: #f8f9fa;
+            background: rgba(74, 158, 255, 0.05);
         }
+        
         .activity-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
+        
         .activity-project {
             font-weight: 600;
-            color: #2196F3;
-            font-size: 14px;
+            color: #4A9EFF;
+            font-size: 13px;
         }
+        
         .activity-time {
             font-size: 11px;
-            color: #999;
+            color: #666;
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 10px;
         }
+        
         .activity-description {
-            font-size: 13px;
-            color: #555;
-            margin-bottom: 4px;
+            font-size: 12px;
+            color: #ccc;
+            margin-bottom: 6px;
+            line-height: 1.4;
         }
+        
         .activity-machine {
             font-size: 11px;
-            color: #888;
+            color: #777;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 6px;
         }
+        
         .machine-icon {
             font-size: 12px;
         }
+        
         .no-activities {
             text-align: center;
             padding: 40px 20px;
-            color: #999;
+            color: #666;
+            background: #252525;
+            border-radius: 12px;
+            border: 1px solid #333;
         }
+        
+        .no-activities p:first-child {
+            font-size: 16px;
+            margin: 0 0 8px 0;
+        }
+        
         .settings {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
+            background: #252525;
+            border-radius: 12px;
+            padding: 16px;
+            border: 1px solid #333;
         }
+        
         .settings-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }
-        input[type="password"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-bottom: 10px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            background: #2196F3;
-            color: white;
-            cursor: pointer;
-            margin-bottom: 10px;
+        
+        .settings-label {
             font-size: 14px;
+            color: #ccc;
+            font-weight: 500;
         }
-        button:hover {
-            background: #1976D2;
-        }
-        button.secondary {
-            background: #fff;
-            color: #2196F3;
-            border: 1px solid #2196F3;
-        }
-        button.secondary:hover {
-            background: #f5f5f5;
-        }
-        .toggle {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
+        
         .switch {
             position: relative;
-            width: 40px;
-            height: 20px;
+            width: 48px;
+            height: 26px;
         }
+        
         .switch input {
             opacity: 0;
             width: 0;
             height: 0;
         }
+        
         .slider {
             position: absolute;
             cursor: pointer;
@@ -178,64 +260,190 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 20px;
+            background-color: #444;
+            transition: 0.3s ease;
+            border-radius: 26px;
         }
+        
         .slider:before {
             position: absolute;
             content: "";
-            height: 14px;
-            width: 14px;
+            height: 20px;
+            width: 20px;
             left: 3px;
             bottom: 3px;
             background-color: white;
-            transition: .4s;
+            transition: 0.3s ease;
             border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
+        
         input:checked + .slider {
-            background-color: #2196F3;
+            background-color: #4A9EFF;
         }
+        
         input:checked + .slider:before {
-            transform: translateX(20px);
+            transform: translateX(22px);
         }
+        
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #4A9EFF;
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.1);
+        }
+        
+        input[type="password"]::placeholder {
+            color: #666;
+        }
+        
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            flex: 1;
+        }
+        
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 0;
+        }
+        
+        .btn-row .btn {
+            margin-bottom: 0;
+        }
+        
+        .btn-primary {
+            background: #4A9EFF;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #357ABD;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #4A9EFF;
+            border: 1px solid #4A9EFF;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(74, 158, 255, 0.1);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
         .loading {
             text-align: center;
             padding: 40px;
             color: #666;
         }
+        
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #333;
+            border-top: 3px solid #4A9EFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
             font-size: 13px;
+            border: 1px solid rgba(244, 67, 54, 0.3);
+        }
+        
+        .last-updated {
+            text-align: center;
+            font-size: 11px;
+            color: #555;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+        }
+        
+        /* Smooth scrollbar for activities */
+        .activities::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .activities::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .activities::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 2px;
+        }
+        
+        .activities::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h2>🌊 FlowState Viewer</h2>
-        <button class="refresh-btn" id="refreshBtn" title="Refresh">↻</button>
-    </div>
-    
-    <div id="mainContent">
-        <div class="loading">Loading FlowState...</div>
-    </div>
-    
-    <div class="settings">
-        <div class="toggle">
-            <span>Auto-refresh</span>
-            <label class="switch">
-                <input type="checkbox" id="enableToggle" checked>
-                <span class="slider"></span>
-            </label>
+    <div class="container">
+        <div class="header">
+            <h2 class="title">🌊 FlowState</h2>
+            <button class="refresh-btn" id="refreshBtn" title="Refresh">↻</button>
         </div>
         
-        <input type="password" id="serviceKey" placeholder="Supabase Service Key">
-        <button id="saveBtn">Save Settings</button>
-        <button id="dashboardBtn" class="secondary">Open Dashboard →</button>
+        <div id="mainContent">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                Loading FlowState...
+            </div>
+        </div>
+        
+        <div class="settings">
+            <div class="settings-row">
+                <span class="settings-label">Auto-refresh</span>
+                <label class="switch">
+                    <input type="checkbox" id="enableToggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <input type="password" id="serviceKey" placeholder="Service Key">
+            <button class="btn btn-primary" id="saveBtn" style="width: 100%; margin-bottom: 12px;">Save Settings</button>
+            
+            <div class="btn-row">
+                <button class="btn btn-primary" id="reconfigureBtn" style="display: none;">Reconfigure</button>
+                <button class="btn btn-secondary" id="dashboardBtn">Open Dashboard →</button>
+            </div>
+        </div>
     </div>
     
     <script src="popup.js"></script>

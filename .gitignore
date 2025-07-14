@@ -97,10 +97,12 @@ temp/
 *.old
 
 # Config with potential secrets
+config.js
 config/local.json
 config/development.json
 config/production.json
 !config/*.template.json
+!config.js.template
 
 # Certificate files
 *.crt
