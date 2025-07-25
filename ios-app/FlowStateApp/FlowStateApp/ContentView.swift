@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var viewModel = FlowStateViewModel()
+    @EnvironmentObject var viewModel: FlowStateViewModel
     @State private var selectedTab = 0
     
     var body: some View {
@@ -111,7 +111,9 @@ struct DashboardView: View {
             .padding(.vertical)
         }
         .navigationTitle("FlowState")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
+        #endif
         .refreshable {
             await viewModel.refresh()
         }

@@ -43,11 +43,12 @@ struct ActivitiesView: View {
                     }
                     .padding(.horizontal)
                 }
-                .padding(.vertical, 5)
+                .frame(height: 40)
             }
             
             // Activities List
             if filteredActivities.isEmpty {
+                Spacer()
                 VStack(spacing: 20) {
                     Image(systemName: "tray")
                         .font(.system(size: 50))
@@ -61,7 +62,7 @@ struct ActivitiesView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                Spacer()
             } else {
                 List(filteredActivities) { activity in
                     ActivityDetailRow(activity: activity)
@@ -79,9 +80,13 @@ struct ActivitiesView: View {
         }
         .overlay {
             if viewModel.isLoading && viewModel.activities.isEmpty {
-                ProgressView("Loading activities...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(.systemBackground))
+                VStack {
+                    Spacer()
+                    ProgressView("Loading activities...")
+                        .padding()
+                    Spacer()
+                }
+                .background(Color.gray.opacity(0.1))
             }
         }
     }
@@ -185,7 +190,7 @@ struct ActivityDetailRow: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.secondarySystemBackground))
+                .fill(Color.gray.opacity(0.05))
         )
     }
 }

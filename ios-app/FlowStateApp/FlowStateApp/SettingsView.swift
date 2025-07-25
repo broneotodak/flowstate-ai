@@ -48,7 +48,7 @@ struct SettingsView: View {
                     .font(.caption)
             }
             
-            // Auto Refresh
+            // Auto Refresh & Notifications
             Section {
                 Toggle("Auto Refresh", isOn: Binding(
                     get: { viewModel.autoRefresh },
@@ -71,8 +71,28 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
+                
+                Divider()
+                
+                Toggle("Memory Notifications", isOn: Binding(
+                    get: { viewModel.notificationsEnabled },
+                    set: { _ in viewModel.toggleNotifications() }
+                ))
+                
+                if viewModel.notificationsEnabled {
+                    HStack {
+                        Image(systemName: "bell.badge")
+                            .foregroundColor(.secondary)
+                        Text("Alerts when flow state memory updates")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
             } header: {
-                Text("Refresh Settings")
+                Text("Refresh & Notifications")
+            } footer: {
+                Text("Get notified when new activities are detected or projects change")
+                    .font(.caption)
             }
             
             // Data Management

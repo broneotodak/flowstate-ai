@@ -84,10 +84,15 @@ class FlowStateViewModel: ObservableObject {
     // Settings
     @Published var serviceKey: String = UserDefaults.standard.string(forKey: "serviceKey") ?? ""
     @Published var autoRefresh = true
+    @Published var notificationsEnabled = UserDefaults.standard.bool(forKey: "notificationsEnabled")
+    
+    // Notification Manager
+    let notificationManager = NotificationManager()
     
     private let supabaseURL = "https://uzamamymfzhelvkwpvgt.supabase.co"
     private var refreshTimer: Timer?
     private var cancellables = Set<AnyCancellable>()
+    private var lastActivityCount = 0
     
     init() {
         Task {
@@ -121,22 +126,57 @@ class FlowStateViewModel: ObservableObject {
         error = nil
         
         do {
-            // Fetch recent activities
-            let activities = try await fetchActivities()
+            // Store previous state for comparison
+            let previousProject = currentProject
+            let previousActivityCount = activities.count
             
-            self.activities = activities
+            // Fetch recent activities
+            let newActivities = try await fetchActivities()
+            
+            // Update state
+            self.activities = newActivities
             
             // Update current project (most recent activity)
-            self.currentProject = activities.first?.project_name
+            let newCurrentProject = newActivities.first?.project_name
+            self.currentProject = newCurrentProject
             
             // Get unique machines from recent activities
-            self.activeMachines = Array(Set(activities.compactMap { $0.machine }))
+            self.activeMachines = Array(Set(newActivities.compactMap { $0.machine }))
                 .sorted()
                 .prefix(5)
                 .map { String($0) }
             
             // Calculate stats
-            calculateStats(from: activities)
+            calculateStats(from: newActivities)
+            
+            // 🔔 NOTIFICATION LOGIC
+            if notificationsEnabled && !isLoading {
+                // Detect project changes
+                if previousProject != newCurrentProject {
+                    notificationManager.sendProjectChangeNotification(
+                        from: previousProject, 
+                        to: newCurrentProject
+                    )
+                }
+                
+                // Detect new activities
+                if newActivities.count > previousActivityCount {
+                    let newActivityCount = newActivities.count - previousActivityCount
+                    
+                    // Send notification for new activities
+                    if let latestActivity = newActivities.first {
+                        notificationManager.sendNewActivityNotification(activity: latestActivity)
+                    }
+                    
+                    print("🔔 Detected \(newActivityCount) new activities")
+                }
+                
+                // Send data refresh notification (every few refreshes to avoid spam)
+                if newActivities.count > 0 && lastActivityCount != newActivities.count {
+                    notificationManager.sendDataRefreshNotification(activityCount: newActivities.count)
+                    lastActivityCount = newActivities.count
+                }
+            }
             
         } catch {
             print("FlowState Error: \(error)")
@@ -242,6 +282,19 @@ class FlowStateViewModel: ObservableObject {
         UserDefaults.standard.set(serviceKey, forKey: "serviceKey")
         Task {
             await refresh()
+        }
+    }
+    
+    func toggleNotifications() {
+        notificationsEnabled.toggle()
+        UserDefaults.standard.set(notificationsEnabled, forKey: "notificationsEnabled")
+        
+        if notificationsEnabled {
+            Task {
+                await notificationManager.requestPermission()
+            }
+        } else {
+            notificationManager.clearBadge()
         }
     }
     
