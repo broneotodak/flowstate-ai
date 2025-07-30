@@ -56,10 +56,11 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Current Project Card
-                if let currentProject = viewModel.currentProject {
-                    CurrentProjectCard(project: currentProject)
-                }
+                // Multiple Current Projects Card
+                MultiProjectFlowView(projects: viewModel.currentProjects)
+                
+                // Git & GitHub Activity Section
+                GitActivityView(gitActivities: viewModel.gitActivities)
                 
                 // Stats Overview
                 HStack(spacing: 15) {

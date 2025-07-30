@@ -117,73 +117,7 @@ class FlowStateViewModel: ObservableObject {
     }
     
     func refresh() async {
-        guard !serviceKey.isEmpty else {
-            error = "Please configure your service key in Settings"
-            return
-        }
-        
-        isLoading = true
-        error = nil
-        
-        do {
-            // Store previous state for comparison
-            let previousProject = currentProject
-            let previousActivityCount = activities.count
-            
-            // Fetch recent activities
-            let newActivities = try await fetchActivities()
-            
-            // Update state
-            self.activities = newActivities
-            
-            // Update current project (most recent activity)
-            let newCurrentProject = newActivities.first?.project_name
-            self.currentProject = newCurrentProject
-            
-            // Get unique machines from recent activities
-            self.activeMachines = Array(Set(newActivities.compactMap { $0.machine }))
-                .sorted()
-                .prefix(5)
-                .map { String($0) }
-            
-            // Calculate stats
-            calculateStats(from: newActivities)
-            
-            // 🔔 NOTIFICATION LOGIC
-            if notificationsEnabled && !isLoading {
-                // Detect project changes
-                if previousProject != newCurrentProject {
-                    notificationManager.sendProjectChangeNotification(
-                        from: previousProject, 
-                        to: newCurrentProject
-                    )
-                }
-                
-                // Detect new activities
-                if newActivities.count > previousActivityCount {
-                    let newActivityCount = newActivities.count - previousActivityCount
-                    
-                    // Send notification for new activities
-                    if let latestActivity = newActivities.first {
-                        notificationManager.sendNewActivityNotification(activity: latestActivity)
-                    }
-                    
-                    print("🔔 Detected \(newActivityCount) new activities")
-                }
-                
-                // Send data refresh notification (every few refreshes to avoid spam)
-                if newActivities.count > 0 && lastActivityCount != newActivities.count {
-                    notificationManager.sendDataRefreshNotification(activityCount: newActivities.count)
-                    lastActivityCount = newActivities.count
-                }
-            }
-            
-        } catch {
-            print("FlowState Error: \(error)")
-            self.error = error.localizedDescription
-        }
-        
-        isLoading = false
+        await refreshEnhanced()
     }
     
     private func fetchActivities() async throws -> [Activity] {
@@ -315,4 +249,219 @@ class FlowStateViewModel: ObservableObject {
             return false
         }
     }
-}
+}    // MARK: - Enhanced Properties for Multiple Projects
+    @Published var currentProjects: [Project] = []
+    @Published var gitActivities: [GitActivity] = []
+    @Published var githubRepositories: [GitHubRepository] = []
+    
+    // MARK: - Enhanced Project Management
+    private func updateCurrentProjects(from activities: [Activity]) {
+        // Group activities by project and calculate stats
+        let projectGroups = Dictionary(grouping: activities) { $0.project_name ?? "Unknown" }
+        
+        var projects: [Project] = []
+        
+        for (projectName, projectActivities) in projectGroups {
+            guard projectName != "Unknown" else { continue }
+            
+            let lastActivity = projectActivities.compactMap { activity in
+                parseActivityDate(activity.created_at)
+            }.max() ?? Date()
+            
+            let project = Project(
+                id: UUID().uuidString,
+                name: projectName,
+                description: generateProjectDescription(from: projectActivities),
+                lastActivity: lastActivity,
+                activityCount: projectActivities.count,
+                status: determineProjectStatus(from: projectActivities, lastActivity: lastActivity),
+                color: Color.randomProjectColor()
+            )
+            
+            projects.append(project)
+        }
+        
+        // Sort by most recent activity and take top active projects
+        self.currentProjects = projects
+            .sorted { $0.lastActivity > $1.lastActivity }
+            .prefix(5)
+            .map { $0 }
+    }
+    
+    private func generateProjectDescription(from activities: [Activity]) -> String? {
+        // Generate smart description based on activity types
+        let activityTypes = activities.map { $0.activity_type }
+        let uniqueTypes = Set(activityTypes)
+        
+        if uniqueTypes.contains("git_commit") && uniqueTypes.contains("code_edit") {
+            return "Active development with commits"
+        } else if uniqueTypes.contains("debugging") {
+            return "Debugging and troubleshooting"
+        } else if uniqueTypes.contains("documentation") {
+            return "Documentation work"
+        } else {
+            return "Recent activity"
+        }
+    }
+    
+    private func determineProjectStatus(from activities: [Activity], lastActivity: Date) -> Project.ProjectStatus {
+        let hoursSinceLastActivity = Date().timeIntervalSince(lastActivity) / 3600
+        
+        if hoursSinceLastActivity < 2 {
+            return .active
+        } else if hoursSinceLastActivity < 24 {
+            return .paused
+        } else {
+            return .completed
+        }
+    }
+    
+    private func parseActivityDate(_ dateString: String) -> Date? {
+        // Use the existing date parsing logic from the Activity model
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        
+        if let date = dateFormatter.date(from: dateString) {
+            return date
+        }
+        
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        if let date = dateFormatter.date(from: dateString) {
+            return date
+        }
+        
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        
+        if let date = formatter.date(from: dateString) {
+            return date
+        }
+        
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: dateString)
+    }    
+    // MARK: - Git Activity Fetching
+    private func fetchGitActivities() async throws -> [GitActivity] {
+        // This would typically connect to your Git activity API endpoint
+        // For now, we'll create mock data and later connect to actual API
+        
+        let mockActivities = [
+            GitActivity(
+                id: UUID().uuidString,
+                repository: "flowstate-ai/ios-app",
+                branch: "develop",
+                commitMessage: "Add multi-project dashboard view",
+                author: "Neo Todak",
+                timestamp: Date().addingTimeInterval(-3600), // 1 hour ago
+                type: .commit,
+                additions: 145,
+                deletions: 23,
+                files_changed: 4
+            ),
+            GitActivity(
+                id: UUID().uuidString,
+                repository: "flowstate-ai/backend",
+                branch: "main",
+                commitMessage: "Fix activity aggregation API",
+                author: "Neo Todak", 
+                timestamp: Date().addingTimeInterval(-7200), // 2 hours ago
+                type: .push,
+                additions: 67,
+                deletions: 12,
+                files_changed: 2
+            ),
+            GitActivity(
+                id: UUID().uuidString,
+                repository: "todak-ai/claude-desktop",
+                branch: "feature/memory-improvements",
+                commitMessage: "Enhance memory saving with CTK compliance",
+                author: "Neo Todak",
+                timestamp: Date().addingTimeInterval(-14400), // 4 hours ago
+                type: .pull_request,
+                additions: 234,
+                deletions: 45,
+                files_changed: 7
+            )
+        ]
+        
+        return mockActivities
+    }
+    
+    // MARK: - Enhanced Refresh Method
+    func refreshEnhanced() async {
+        guard !serviceKey.isEmpty else {
+            error = "Please configure your service key in Settings"
+            return
+        }
+        
+        isLoading = true
+        error = nil
+        
+        do {
+            // Store previous state for comparison
+            let previousProject = currentProject
+            let previousActivityCount = activities.count
+            
+            // Fetch regular activities
+            let newActivities = try await fetchActivities()
+            
+            // Fetch Git activities
+            let newGitActivities = try await fetchGitActivities()
+            
+            // Update state
+            self.activities = newActivities
+            self.gitActivities = newGitActivities
+            
+            // Update current projects (multiple)
+            updateCurrentProjects(from: newActivities)
+            
+            // Keep backward compatibility - set currentProject to most recent
+            let newCurrentProject = currentProjects.first?.name
+            self.currentProject = newCurrentProject
+            
+            // Get unique machines from recent activities
+            self.activeMachines = Array(Set(newActivities.compactMap { $0.machine }))
+                .sorted()
+                .prefix(5)
+                .map { String($0) }
+            
+            // Calculate stats
+            calculateStats(from: newActivities)
+            
+            // 🔔 NOTIFICATION LOGIC (keeping existing logic)
+            if notificationsEnabled && !isLoading {
+                // Detect project changes
+                if previousProject != newCurrentProject {
+                    notificationManager.sendProjectChangeNotification(
+                        from: previousProject, 
+                        to: newCurrentProject
+                    )
+                }
+                
+                // Detect new activities
+                if newActivities.count > previousActivityCount {
+                    let newActivityCount = newActivities.count - previousActivityCount
+                    
+                    // Send notification for new activities
+                    if let latestActivity = newActivities.first {
+                        notificationManager.sendNewActivityNotification(activity: latestActivity)
+                    }
+                    
+                    print("🔔 Detected \(newActivityCount) new activities")
+                }
+                
+                // Send data refresh notification (every few refreshes to avoid spam)
+                if newActivities.count > 0 && lastActivityCount != newActivities.count {
+                    notificationManager.sendDataRefreshNotification(activityCount: newActivities.count)
+                    lastActivityCount = newActivities.count
+                }
+            }
+            
+        } catch {
+            print("FlowState Error: \(error)")
+            self.error = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
