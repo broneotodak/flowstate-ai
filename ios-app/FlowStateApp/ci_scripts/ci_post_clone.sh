@@ -6,8 +6,9 @@
 
 set -e
 
-echo "🚀 FlowState App - Post Clone Setup"
+echo "🚀 FlowState App - Post Clone Setup (v1.1)"
 echo "Current directory: $(pwd)"
+echo "Branch: $(git branch --show-current 2>/dev/null || echo 'main')"
 echo "Available files:"
 ls -la
 
@@ -17,7 +18,7 @@ xcodebuild -version
 
 # Check available simulators
 echo "📱 Available iOS Simulators:"
-xcrun simctl list devices iOS
+xcrun simctl list devices iOS | head -20
 
 # Verify project structure
 echo "📁 Project structure:"
@@ -30,3 +31,4 @@ find . -name "*.xcodeproj" -o -name "*.xcworkspace"
 # - Configuring certificates (if needed)
 
 echo "✅ Post-clone setup completed successfully!"
+echo "🎯 Ready to build FlowState App!"
