@@ -256,6 +256,10 @@ class FlowStateViewModel: ObservableObject {
     @Published var gitActivities: [GitActivity] = []
     @Published var githubRepositories: [GitHubRepository] = []
     
+    // GitHub Service
+    private let githubService = GitHubService()
+    @Published var isGitHubConnected = false
+    
     // MARK: - Enhanced Project Management
     private func updateCurrentProjects(from activities: [Activity]) {
         // Group activities by project and calculate stats
@@ -345,14 +349,39 @@ class FlowStateViewModel: ObservableObject {
     }    
     // MARK: - Git Activity Fetching
     private func fetchGitActivities() async throws -> [GitActivity] {
-        // This would typically connect to your Git activity API endpoint
-        // For now, we'll create mock data and later connect to actual API
+        // Check if GitHub token is available and valid
+        let isTokenValid = await githubService.validateGitHubToken()
         
+        if isTokenValid {
+            self.isGitHubConnected = true
+            // Fetch real GitHub activities
+            return try await githubService.fetchAllRecentGitActivities()
+        } else {
+            self.isGitHubConnected = false
+            // Fall back to mock data if no valid GitHub token
+            return createMockGitActivities()
+        }
+    }
+    
+    // MARK: - Mock Git Activities (fallback)
+    private func createMockGitActivities() -> [GitActivity] {
         let mockActivities = [
             GitActivity(
                 id: UUID().uuidString,
-                repository: "flowstate-ai/ios-app",
-                branch: "develop",
+                repository: "flowstate-ai",
+                branch: "main",
+                commitMessage: "Fix: Resolve Build #4 compilation errors",
+                author: "Neo Todak",
+                timestamp: Date().addingTimeInterval(-1800), // 30 min ago
+                type: .commit,
+                additions: 25,
+                deletions: 2,
+                files_changed: 3
+            ),
+            GitActivity(
+                id: UUID().uuidString,
+                repository: "flowstate-ai",
+                branch: "main",
                 commitMessage: "Add multi-project dashboard view",
                 author: "Neo Todak",
                 timestamp: Date().addingTimeInterval(-3600), // 1 hour ago
@@ -363,27 +392,15 @@ class FlowStateViewModel: ObservableObject {
             ),
             GitActivity(
                 id: UUID().uuidString,
-                repository: "flowstate-ai/backend",
-                branch: "main",
-                commitMessage: "Fix activity aggregation API",
-                author: "Neo Todak", 
+                repository: "claude-tools-kit",
+                branch: "develop",
+                commitMessage: "Enhanced memory saving with CTK compliance",
+                author: "Neo Todak",
                 timestamp: Date().addingTimeInterval(-7200), // 2 hours ago
                 type: .push,
                 additions: 67,
                 deletions: 12,
                 files_changed: 2
-            ),
-            GitActivity(
-                id: UUID().uuidString,
-                repository: "todak-ai/claude-desktop",
-                branch: "feature/memory-improvements",
-                commitMessage: "Enhance memory saving with CTK compliance",
-                author: "Neo Todak",
-                timestamp: Date().addingTimeInterval(-14400), // 4 hours ago
-                type: .pull_request,
-                additions: 234,
-                deletions: 45,
-                files_changed: 7
             )
         ]
         

@@ -95,6 +95,26 @@ struct SettingsView: View {
                     .font(.caption)
             }
             
+            // GitHub Integration
+            Section {
+                NavigationLink("GitHub Integration") {
+                    GitHubSettingsView(viewModel: viewModel)
+                }
+                
+                HStack {
+                    Image(systemName: viewModel.isGitHubConnected ? "checkmark.circle.fill" : "xmark.circle")
+                        .foregroundColor(viewModel.isGitHubConnected ? .green : .red)
+                    Text(viewModel.isGitHubConnected ? "Connected" : "Not Connected")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            } header: {
+                Text("Git Activity")
+            } footer: {
+                Text("Connect your GitHub account to see real commit activity in the dashboard")
+                    .font(.caption)
+            }
+            
             // Data Management
             Section {
                 Button("Refresh Now") {
