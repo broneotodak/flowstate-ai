@@ -1,0 +1,54 @@
+# FlowState App - Xcode Cloud Workflow Configuration
+# This file defines the CI/CD pipeline for automatic building and deployment
+
+name: FlowState App Production
+description: Builds, tests, and deploys FlowState App
+
+# When to trigger builds
+on:
+  push:
+    branches: 
+      - main      # Production releases
+      - develop   # Beta testing
+  pull_request:
+    branches: 
+      - main
+
+# Build environment
+platform: macos
+xcode_version: latest
+
+# Build steps
+steps:
+  # 1. Build the app
+  build:
+    scheme: FlowStateApp
+    destination: generic/platform=iOS
+    configuration: Release
+    
+  # 2. Run tests
+  test:
+    scheme: FlowStateApp
+    destination: platform=iOS Simulator,name=iPhone 15 Pro,OS=latest
+    
+  # 3. Archive for distribution
+  archive:
+    scheme: FlowStateApp
+    destination: generic/platform=iOS
+    configuration: Release
+
+# Deployment rules
+deploy:
+  # TestFlight for develop branch
+  testflight:
+    when:
+      branch: develop
+    group: "Internal Testing"
+    
+  # App Store for main branch with version tags
+  app_store:
+    when:
+      branch: main
+      tag: "v*"
+    submit_for_review: true
+    phased_release: true
