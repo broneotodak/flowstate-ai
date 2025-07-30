@@ -233,13 +233,23 @@ struct GitActivityDetailView: View {
                 .padding()
             }
             .navigationTitle("Git Activity")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         // Dismiss view
                     }
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done") {
+                        // Dismiss view
+                    }
+                }
+                #endif
             }
         }
     }

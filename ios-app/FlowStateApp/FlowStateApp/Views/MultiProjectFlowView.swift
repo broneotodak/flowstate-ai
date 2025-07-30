@@ -194,13 +194,23 @@ struct ProjectDetailView: View {
             }
             .padding()
             .navigationTitle("Project Details")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         // Dismiss view
                     }
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Done") {
+                        // Dismiss view
+                    }
+                }
+                #endif
             }
         }
     }

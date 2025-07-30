@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 // Metadata Model
 struct ActivityMetadata: Codable {
@@ -249,7 +250,8 @@ class FlowStateViewModel: ObservableObject {
             return false
         }
     }
-}    // MARK: - Enhanced Properties for Multiple Projects
+    
+    // MARK: - Enhanced Properties for Multiple Projects
     @Published var currentProjects: [Project] = []
     @Published var gitActivities: [GitActivity] = []
     @Published var githubRepositories: [GitHubRepository] = []
@@ -465,3 +467,4 @@ class FlowStateViewModel: ObservableObject {
         
         isLoading = false
     }
+}
