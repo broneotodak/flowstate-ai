@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How FlowState AI Works - Real-time Memory System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><text x='16' y='24' text-anchor='middle' font-size='24' fill='white'>🌊</text></svg>">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Aceternity-inspired glassmorphism - matching main site */
+        .glass {
+            background: rgba(17, 25, 40, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+        }
+        
+        /* Gradient backgrounds - matching main site */
+        .gradient-bg {
+            background: linear-gradient(to bottom right, #000000, #0a0a0a);
+        }
+        
+        /* Glow effects - matching main site */
+        .glow {
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.3);
+        }
+        
+        .glow-hover:hover {
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.5);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        
+        /* Scrollbar styling - matching main site */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.5);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.7);
+        }
+        
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.6s ease-out forwards;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-blue {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .pulse-blue {
+            animation: pulse-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Step hover effects */
+        .step-card:hover {
+            transform: translateX(10px);
+            transition: all 0.3s ease;
+        }
+        
+        /* Flow arrow animation */
+        @keyframes flowArrow {
+            0% { transform: translateX(0); opacity: 0.7; }
+            50% { transform: translateX(5px); opacity: 1; }
+            100% { transform: translateX(0); opacity: 0.7; }
+        }
+        
+        .flow-arrow {
+            animation: flowArrow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen custom-scrollbar">
+    <!-- Background effects - matching main site -->
+    <div class="fixed inset-0 gradient-bg">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full filter blur-3xl opacity-10"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full filter blur-3xl opacity-10"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-7xl mx-auto p-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="text-5xl float">🌊</div>
+                <div>
+                    <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">
+                        How FlowState AI Works
+                    </h1>
+                    <p class="text-gray-400 text-sm">Intelligent Memory System Architecture</p>
+                </div>
+            </div>
+            <a href="index.html" class="glass px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all">
+                ← Back to Dashboard
+            </a>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass rounded-xl p-6 glow-hover">
+                <h3 class="text-gray-400 text-sm mb-2">Memories Stored</h3>
+                <div class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">2,675+</div>
+            </div>
+            <div class="glass rounded-xl p-6 glow-hover">
+                <h3 class="text-gray-400 text-sm mb-2">AI Tools Integrated</h3>
+                <div class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">5</div>
+            </div>
+            <div class="glass rounded-xl p-6 glow-hover">
+                <h3 class="text-gray-400 text-sm mb-2">Platforms</h3>
+                <div class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">3</div>
+            </div>
+            <div class="glass rounded-xl p-6 glow-hover">
+                <h3 class="text-gray-400 text-sm mb-2">Auto Tracking</h3>
+                <div class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600">24/7</div>
+            </div>
+        </div>
+        
+        <!-- Real-Time Memory Flow -->
+        <div class="glass rounded-xl p-8 mb-8 glow">
+            <h2 class="text-2xl font-semibold mb-6 text-center">🔄 Real-Time Memory Flow</h2>
+            <div class="flex flex-wrap justify-center items-center gap-4 text-center">
+                <div class="flex items-center gap-4">
+                    <div class="glass px-6 py-3 rounded-full bg-blue-500/10">
+                        <span class="font-medium">AI Tools</span>
+                    </div>
+                    <div class="text-blue-400 text-xl flow-arrow">→</div>
+                    <div class="glass px-6 py-3 rounded-full bg-blue-500/10">
+                        <span class="font-medium">pgVector DB</span>
+                    </div>
+                    <div class="text-blue-400 text-xl flow-arrow">→</div>
+                    <div class="glass px-6 py-3 rounded-full bg-blue-500/10">
+                        <span class="font-medium">Memory Bridge</span>
+                    </div>
+                    <div class="text-blue-400 text-xl flow-arrow">→</div>
+                    <div class="glass px-6 py-3 rounded-full bg-blue-500/10">
+                        <span class="font-medium">Activities</span>
+                    </div>
+                    <div class="text-blue-400 text-xl flow-arrow">→</div>
+                    <div class="glass px-6 py-3 rounded-full bg-blue-500/10 pulse-blue">
+                        <span class="font-medium">FlowState App</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How It Works Steps -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold mb-6 text-center">The 5-Step Intelligent Workflow</h2>
+            <div class="space-y-6">
+                <!-- Step 1 -->
+                <div class="glass rounded-xl p-6 step-card slide-in">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            1
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold mb-2 text-blue-400">🤖 AI Tool Interactions</h3>
+                            <p class="text-gray-300 mb-4">Every time you use AI tools, they automatically save conversation memories and technical solutions to the pgVector database.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Claude Desktop</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Claude Code CLI</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Cursor</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">VS Code</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Browser Extension</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="glass rounded-xl p-6 step-card slide-in" style="animation-delay: 0.2s;">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            2
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold mb-2 text-blue-400">🧠 Intelligent Memory Storage</h3>
+                            <p class="text-gray-300 mb-4">Memories are stored with <span class="text-blue-400 font-semibold">vector embeddings</span> for semantic search, project detection, and automatic categorization.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">pgVector Database</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">OpenAI Embeddings</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">CTK Compliance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="glass rounded-xl p-6 step-card slide-in" style="animation-delay: 0.4s;">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            3
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold mb-2 text-blue-400">🔄 Memory Bridge Automation</h3>
+                            <p class="text-gray-300 mb-4">The Memory Bridge daemon runs 24/7, automatically converting memories into activity logs with project detection and tool normalization.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Node.js Daemon</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Project Detection</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">30s Sync Interval</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="glass rounded-xl p-6 step-card slide-in" style="animation-delay: 0.6s;">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            4
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold mb-2 text-blue-400">📱 Multi-Platform Display</h3>
+                            <p class="text-gray-300 mb-4">Activities appear instantly across all FlowState platforms - iOS app, web dashboard, and browser extension.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">iOS App</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Web Dashboard</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Browser Extension</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Step 5 -->
+                <div class="glass rounded-xl p-6 step-card slide-in" style="animation-delay: 0.8s;">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0 w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            5
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold mb-2 text-blue-400">☁️ Automated Backups</h3>
+                            <p class="text-gray-300 mb-4">All memories are automatically backed up to GitHub with encryption, ensuring your development history is never lost.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">GitHub Backups</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Cron Jobs</span>
+                                <span class="px-3 py-1 bg-blue-500/20 rounded-full text-sm border border-blue-500/30">Encrypted Storage</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Architecture Components -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold mb-6 text-center">System Architecture</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Memory Sources -->
+                <div class="glass rounded-xl p-6 slide-in glow-hover">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-400 flex items-center">
+                        <span class="mr-3 text-2xl">🗄️</span>
+                        Memory Sources
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">claude_desktop_memory</strong> - All Claude interactions</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">context_embeddings</strong> - Semantic search data</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">activity_log</strong> - Processed activities</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">flowstate_unified</strong> - Consolidated view</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Automation Layer -->
+                <div class="glass rounded-xl p-6 slide-in glow-hover" style="animation-delay: 0.2s;">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-400 flex items-center">
+                        <span class="mr-3 text-2xl">🔧</span>
+                        Automation Layer
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Memory Bridge Daemon</strong> - Continuous sync</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Git Hooks</strong> - Commit tracking</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">GitHub Webhooks</strong> - Cloud events</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Backup Scripts</strong> - Data protection</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- User Interfaces -->
+                <div class="glass rounded-xl p-6 slide-in glow-hover" style="animation-delay: 0.4s;">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-400 flex items-center">
+                        <span class="mr-3 text-2xl">📱</span>
+                        User Interfaces
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">iOS App</strong> - Native mobile experience</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Web Dashboard</strong> - Full-featured interface</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Browser Extension</strong> - Quick access</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Analytics</strong> - Project insights</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Pipeline -->
+                <div class="glass rounded-xl p-6 slide-in glow-hover" style="animation-delay: 0.6s;">
+                    <h3 class="text-xl font-semibold mb-4 text-blue-400 flex items-center">
+                        <span class="mr-3 text-2xl">🔐</span>
+                        Data Pipeline
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Vector Embeddings</strong> - Semantic search</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Auto Categorization</strong> - Project detection</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Real-time Sync</strong> - Instant updates</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            <span class="text-gray-300"><strong class="text-white">Analytics</strong> - Usage patterns</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CTA Section -->
+        <div class="glass rounded-xl p-8 text-center">
+            <h2 class="text-2xl font-semibold mb-4">Experience FlowState AI</h2>
+            <p class="text-gray-400 mb-6">Get instant visibility into your AI-powered development workflow</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="https://apps.apple.com/app/flowstate-ai" class="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full font-medium transition-all glow-hover">
+                    📱 Download iOS App
+                </a>
+                <a href="index.html" class="inline-flex items-center gap-2 glass hover:bg-blue-500/20 text-white px-6 py-3 rounded-full font-medium transition-all glow-hover">
+                    🌐 View Dashboard
+                </a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-8 text-gray-500 text-sm">
+            <p>FlowState AI - Built with ❤️ for developers who love intelligent automation</p>
+        </div>
+    </div>
+</body>
+</html>

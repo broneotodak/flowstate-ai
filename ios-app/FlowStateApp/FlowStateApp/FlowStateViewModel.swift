@@ -122,11 +122,11 @@ class FlowStateViewModel: ObservableObject {
     }
     
     private func fetchActivities() async throws -> [Activity] {
-        let twoHoursAgo = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-2 * 60 * 60))
+        let twentyFourHoursAgo = ISO8601DateFormatter().string(from: Date().addingTimeInterval(-24 * 60 * 60))
         
         var components = URLComponents(string: "\(supabaseURL)/rest/v1/flowstate_activities")!
         components.queryItems = [
-            URLQueryItem(name: "created_at", value: "gte.\(twoHoursAgo)"),
+            URLQueryItem(name: "created_at", value: "gte.\(twentyFourHoursAgo)"),
             URLQueryItem(name: "order", value: "created_at.desc"),
             URLQueryItem(name: "limit", value: "50")
         ]

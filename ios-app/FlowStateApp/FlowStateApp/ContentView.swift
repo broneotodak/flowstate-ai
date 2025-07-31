@@ -33,6 +33,15 @@ struct ContentView: View {
             }
             .tag(2)
             
+            // How It Works Tab
+            NavigationView {
+                HowItWorksView()
+            }
+            .tabItem {
+                Label("How It Works", systemImage: "questionmark.circle")
+            }
+            .tag(3)
+            
             // Settings Tab
             NavigationView {
                 SettingsView(viewModel: viewModel)
@@ -40,7 +49,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Settings", systemImage: "gear")
             }
-            .tag(3)
+            .tag(4)
         }
         .accentColor(.blue)
         .onAppear {
