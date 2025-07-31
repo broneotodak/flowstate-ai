@@ -102,22 +102,24 @@ struct DataFlowView: View {
                 .font(.headline)
                 .fontWeight(.semibold)
             
-            HStack(spacing: 10) {
+            // Vertical flow for mobile
+            VStack(spacing: 12) {
                 ForEach(Array(flowItems.enumerated()), id: \.offset) { index, item in
-                    VStack {
+                    VStack(spacing: 8) {
                         Text(item)
-                            .font(.caption)
+                            .font(.subheadline)
                             .fontWeight(.medium)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(15)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.15))
+                            .cornerRadius(20)
+                            .frame(maxWidth: .infinity)
                         
                         if index < flowItems.count - 1 {
-                            Image(systemName: "arrow.right")
-                                .font(.caption)
+                            Image(systemName: "arrow.down")
+                                .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.blue)
-                                .padding(.top, 4)
+                                .opacity(0.7)
                         }
                     }
                 }
@@ -127,7 +129,7 @@ struct DataFlowView: View {
         .padding()
         .background(
             LinearGradient(
-                colors: [Color.blue.opacity(0.1), Color.purple.opacity(0.1)],
+                colors: [Color.blue.opacity(0.08), Color.blue.opacity(0.12)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -142,49 +144,79 @@ struct WorkflowStepView: View {
     let isSelected: Bool
     
     var body: some View {
-        HStack(spacing: 15) {
-            // Step Number
-            Circle()
-                .fill(Color.blue)
-                .frame(width: 35, height: 35)
-                .overlay(
-                    Text("\(stepNumber)")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                )
+        VStack(spacing: 0) {
+            // Main step content
+            HStack(spacing: 15) {
+                // Step Number
+                Circle()
+                    .fill(Color.blue)
+                    .frame(width: 35, height: 35)
+                    .overlay(
+                        Text("\(stepNumber)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                    )
+                
+                // Step Content
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(step.title)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .lineLimit(2)
+                    
+                    Text(step.description)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(isSelected ? nil : 3)
+                }
+                
+                Spacer()
+                
+                // Expand indicator
+                Image(systemName: isSelected ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.blue)
+                    .rotationEffect(.degrees(isSelected ? 180 : 0))
+            }
+            .padding()
             
-            // Step Content
-            VStack(alignment: .leading, spacing: 8) {
-                Text(step.title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Text(step.description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                if isSelected {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 6) {
+            // Expandable tools section
+            if isSelected {
+                VStack(spacing: 8) {
+                    Divider()
+                    
+                    Text("Technologies Used:")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal)
+                    
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 8) {
                         ForEach(step.tools, id: \.self) { tool in
                             Text(tool)
                                 .font(.caption2)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
                                 .background(Color(.systemGray5))
-                                .cornerRadius(10)
+                                .cornerRadius(12)
+                                .lineLimit(1)
                         }
                     }
-                    .transition(.opacity.combined(with: .scale))
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
                 }
+                .transition(.opacity.combined(with: .scale(scale: 0.95)))
             }
-            
-            Spacer()
         }
-        .padding()
         .background(Color(.systemGray6))
         .cornerRadius(12)
         .scaleEffect(isSelected ? 1.02 : 1.0)
-        .animation(.spring(response: 0.3), value: isSelected)
+        .shadow(color: isSelected ? .blue.opacity(0.3) : .clear, radius: isSelected ? 8 : 0)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isSelected)
     }
 }
 
@@ -219,7 +251,7 @@ struct ArchitectureGridView: View {
                 .fontWeight(.bold)
                 .padding(.top)
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 1), spacing: 15) {
+            LazyVGrid(columns: [GridItem(.flexible())], spacing: 15) {
                 ForEach(components, id: \.title) { component in
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
