@@ -1,27 +1,18 @@
 #!/bin/sh
 
-# ci_pre_xcodebuild.sh - Pre-build optimizations for iOS-ONLY builds
+# ci_pre_xcodebuild.sh - Pre-build optimizations for iOS builds
+# Simplified version to avoid Xcode Cloud environment issues
 
-echo "⚡ Pre-xcodebuild: FlowState v1.2 iOS-ONLY optimizations"
+echo "⚡ Pre-xcodebuild: FlowState v1.2 setup"
 echo "Current directory: $(pwd)"
 echo "Build configuration: ${CONFIGURATION:-Release}"
-echo "Platform: ${PLATFORM_NAME:-iOS}"
+echo "Platform: ${PLATFORM_NAME:-Unknown}"
 
-# 🚨 CRITICAL: Force iOS-only builds
-echo "🎯 Enforcing iOS-ONLY build configuration..."
-
-# Override any macOS/visionOS settings
+# Set iOS-focused environment variables (non-blocking)
+echo "🎯 Setting iOS build preferences..."
 export SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD=NO
 export SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD=NO
 export SUPPORTED_PLATFORMS="iphoneos iphonesimulator"
-export TARGETED_DEVICE_FAMILY="1,2"
-
-# Ensure we're building iOS only
-if [ "$PLATFORM_NAME" != "iphoneos" ] && [ "$PLATFORM_NAME" != "iphonesimulator" ]; then
-    echo "❌ ERROR: Attempting to build for unsupported platform: $PLATFORM_NAME"
-    echo "✅ FlowState App only supports iOS (iPhone/iPad)"
-    exit 1
-fi
 
 # Set compiler optimizations for release builds
 if [ "$CONFIGURATION" = "Release" ]; then
@@ -31,16 +22,15 @@ if [ "$CONFIGURATION" = "Release" ]; then
     export ENABLE_BITCODE="NO"
 fi
 
-# Clear any cached build data that might cause issues
-echo "🧹 Clearing potentially problematic caches..."
-rm -rf ~/Library/Developer/Xcode/DerivedData/FlowStateApp-*/
+# Clear potentially problematic caches (with error handling)
+echo "🧹 Clearing build caches..."
+rm -rf ~/Library/Developer/Xcode/DerivedData/FlowStateApp-* 2>/dev/null || true
 
-# Apply iOS-only xcconfig if it exists
-if [ -f "../ios-only.xcconfig" ]; then
-    echo "✅ Applying iOS-only configuration"
-    export XCODE_XCCONFIG_FILE="../ios-only.xcconfig"
-fi
+# Log platform info for debugging (but don't fail)
+echo "📊 Environment Info:"
+echo "   PLATFORM_NAME: ${PLATFORM_NAME:-Not Set}"
+echo "   CONFIGURATION: ${CONFIGURATION:-Not Set}"
+echo "   SDK_NAME: ${SDK_NAME:-Not Set}"
 
-echo "✅ Pre-build setup complete - iOS-ONLY mode enforced"
-echo "📱 Building for iOS (iPhone/iPad) only"
+echo "✅ Pre-build setup complete"
 exit 0
