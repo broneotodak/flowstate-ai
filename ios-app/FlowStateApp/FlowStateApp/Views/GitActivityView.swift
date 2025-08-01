@@ -4,6 +4,7 @@ import Foundation
 struct GitActivityView: View {
     let gitActivities: [GitActivity]
     @State private var selectedActivity: GitActivity?
+    @State private var showingAllActivities = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -18,7 +19,7 @@ struct GitActivityView: View {
                 Spacer()
                 if gitActivities.count > 3 {
                     Button("See All") {
-                        // Navigate to full git activity view
+                        showingAllActivities = true
                     }
                     .font(.caption)
                     .foregroundColor(.orange)
@@ -44,8 +45,86 @@ struct GitActivityView: View {
         .sheet(item: $selectedActivity) { activity in
             GitActivityDetailView(activity: activity)
         }
+        .sheet(isPresented: $showingAllActivities) {
+            AllGitActivitiesView(activities: gitActivities)
+        }
     }
 }
+
+struct AllGitActivitiesView: View {
+    let activities: [GitActivity]
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            List(activities) { activity in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: activity.type.systemImage)
+                            .font(.title3)
+                            .foregroundColor(Color(activity.type.color))
+                        Text(activity.commitMessage)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .lineLimit(2)
+                        Spacer()
+                    }
+                    
+                    HStack(spacing: 12) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "folder")
+                                .font(.caption2)
+                            Text(activity.repository)
+                                .font(.caption)
+                        }
+                        .foregroundColor(.secondary)
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.branch")
+                                .font(.caption2)
+                            Text(activity.branch)
+                                .font(.caption)
+                        }
+                        .foregroundColor(.secondary)
+                        
+                        Spacer()
+                        
+                        Text(activity.timeAgo)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if let additions = activity.additions, let deletions = activity.deletions {
+                        HStack(spacing: 12) {
+                            Text("+\(additions)")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                            Text("-\(deletions)")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            if let filesChanged = activity.files_changed {
+                                Text("\(filesChanged) files")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .navigationTitle("All Git Activity")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct GitActivityRow: View {
     let activity: GitActivity
     let onTap: () -> Void
@@ -147,6 +226,7 @@ struct EmptyGitActivityView: View {
 
 struct GitActivityDetailView: View {
     let activity: GitActivity
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
@@ -240,7 +320,7 @@ struct GitActivityDetailView: View {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        // Dismiss view
+                        dismiss()
                     }
                 }
                 #else

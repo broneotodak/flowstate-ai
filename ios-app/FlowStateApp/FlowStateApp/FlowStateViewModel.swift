@@ -98,6 +98,8 @@ class FlowStateViewModel: ObservableObject {
     init() {
         Task {
             await refresh()
+            // Check notification authorization on startup
+            await notificationManager.checkAuthorizationStatus()
         }
     }
     
@@ -227,6 +229,8 @@ class FlowStateViewModel: ObservableObject {
         if notificationsEnabled {
             Task {
                 await notificationManager.requestPermission()
+                // Check the actual authorization status after requesting
+                await notificationManager.checkAuthorizationStatus()
             }
         } else {
             notificationManager.clearBadge()
@@ -263,13 +267,19 @@ class FlowStateViewModel: ObservableObject {
     // MARK: - Enhanced Project Management
     private func updateCurrentProjects(from activities: [Activity]) {
         // Group activities by project and calculate stats
-        let projectGroups = Dictionary(grouping: activities) { $0.project_name ?? "Unknown" }
+        let projectGroups = Dictionary(grouping: activities) { activity in
+            // Handle both null project_name and "Unknown Project" string
+            let projectName = activity.project_name
+            if projectName == nil || projectName == "Unknown Project" || projectName?.isEmpty == true {
+                return "General Activity"
+            }
+            return projectName!
+        }
         
         var projects: [Project] = []
         
         for (projectName, projectActivities) in projectGroups {
-            guard projectName != "Unknown" else { continue }
-            
+            // Include all projects, even "General Activity"
             let lastActivity = projectActivities.compactMap { activity in
                 parseActivityDate(activity.created_at)
             }.max() ?? Date()

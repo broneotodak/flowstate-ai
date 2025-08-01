@@ -4,6 +4,7 @@ import Foundation
 struct MultiProjectFlowView: View {
     let projects: [Project]
     @State private var selectedProject: Project?
+    @State private var showingAllProjects = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -18,7 +19,7 @@ struct MultiProjectFlowView: View {
                 Spacer()
                 if projects.count > 2 {
                     Button("See All") {
-                        // Navigate to all projects view
+                        showingAllProjects = true
                     }
                     .font(.caption)
                     .foregroundColor(.blue)
@@ -45,6 +46,9 @@ struct MultiProjectFlowView: View {
         }
         .sheet(item: $selectedProject) { project in
             ProjectDetailView(project: project)
+        }
+        .sheet(isPresented: $showingAllProjects) {
+            AllProjectsView(projects: projects)
         }
     }
 }
@@ -133,6 +137,7 @@ struct EmptyProjectsView: View {
 
 struct ProjectDetailView: View {
     let project: Project
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
@@ -201,16 +206,80 @@ struct ProjectDetailView: View {
                 #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        // Dismiss view
+                        dismiss()
                     }
                 }
                 #else
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
-                        // Dismiss view
+                        dismiss()
                     }
                 }
                 #endif
+            }
+        }
+    }
+}
+
+struct AllProjectsView: View {
+    let projects: [Project]
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            List(projects) { project in
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: project.color) ?? Color.blue)
+                            .frame(width: 12, height: 12)
+                        Text(project.name)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text("\(project.activityCount)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(Color.gray.opacity(0.2))
+                            )
+                    }
+                    
+                    if let description = project.description {
+                        Text(description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(2)
+                    }
+                    
+                    HStack {
+                        HStack(spacing: 4) {
+                            Image(systemName: project.status.systemImage)
+                            Text(project.status.displayName)
+                        }
+                        .font(.caption)
+                        .foregroundColor(project.status == .active ? .green : .secondary)
+                        
+                        Spacer()
+                        
+                        Text("Last: \(project.lastActivity.timeAgoShort)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .navigationTitle("All Projects")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
             }
         }
     }

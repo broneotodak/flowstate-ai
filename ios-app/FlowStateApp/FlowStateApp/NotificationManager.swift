@@ -7,7 +7,24 @@ class NotificationManager: ObservableObject {
     
     init() {
         Task {
-            await requestPermission()
+            await checkAuthorizationStatus()
+        }
+    }
+    
+    func checkAuthorizationStatus() async {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        let wasAuthorized = isAuthorized
+        isAuthorized = settings.authorizationStatus == .authorized
+        
+        print("📱 Notification status check:")
+        print("   Authorization: \(settings.authorizationStatus.rawValue) (\(settings.authorizationStatus))")
+        print("   Alert Setting: \(settings.alertSetting.rawValue)")
+        print("   Badge Setting: \(settings.badgeSetting.rawValue)")  
+        print("   Sound Setting: \(settings.soundSetting.rawValue)")
+        print("   Is Authorized: \(isAuthorized)")
+        
+        if wasAuthorized != isAuthorized {
+            print("📱 Authorization status changed: \(wasAuthorized) → \(isAuthorized)")
         }
     }
     
@@ -25,7 +42,15 @@ class NotificationManager: ObservableObject {
     }
     
     func sendMemoryUpdateNotification(title: String, body: String) {
-        guard isAuthorized else { return }
+        print("📤 Attempting to send notification:")
+        print("   Title: \(title)")
+        print("   Body: \(body)")
+        print("   Current authorization: \(isAuthorized)")
+        
+        guard isAuthorized else { 
+            print("❌ Notification blocked: Not authorized")
+            return 
+        }
         
         let content = UNMutableNotificationContent()
         content.title = title
@@ -40,11 +65,16 @@ class NotificationManager: ObservableObject {
             trigger: nil
         )
         
+        print("📤 Adding notification request...")
         UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("❌ Notification error: \(error)")
-            } else {
-                print("✅ Notification sent: \(title)")
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("❌ Notification error: \(error.localizedDescription)")
+                    print("   Error details: \(error)")
+                } else {
+                    print("✅ Notification sent successfully: \(title)")
+                    print("   Request ID: \(request.identifier)")
+                }
             }
         }
     }
@@ -78,5 +108,25 @@ class NotificationManager: ObservableObject {
     
     func clearBadge() {
         UNUserNotificationCenter.current().setBadgeCount(0)
+    }
+    
+    func sendTestNotification() {
+        Task {
+            // Force check authorization status first
+            await checkAuthorizationStatus()
+            
+            await MainActor.run {
+                guard isAuthorized else { 
+                    print("❌ Test notification failed: Not authorized. Status: \(isAuthorized)")
+                    return 
+                }
+                
+                let title = "🧪 Test Notification"
+                let body = "FlowState notifications are working correctly!"
+                
+                print("🧪 Sending test notification with authorization: \(isAuthorized)")
+                sendMemoryUpdateNotification(title: title, body: body)
+            }
+        }
     }
 }

@@ -71,13 +71,24 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-                
-                Divider()
-                
+            } header: {
+                Text("Auto Refresh")
+            }
+            
+            Section {
                 Toggle("Memory Notifications", isOn: Binding(
                     get: { viewModel.notificationsEnabled },
                     set: { _ in viewModel.toggleNotifications() }
                 ))
+                
+                // Show actual notification permission status
+                HStack {
+                    Image(systemName: viewModel.notificationManager.isAuthorized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                        .foregroundColor(viewModel.notificationManager.isAuthorized ? .green : .orange)
+                    Text(viewModel.notificationManager.isAuthorized ? "Permission Granted" : "Permission Required")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
                 
                 if viewModel.notificationsEnabled {
                     HStack {
@@ -87,12 +98,22 @@ struct SettingsView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    
+                    Button("Test Notification") {
+                        viewModel.notificationManager.sendTestNotification()
+                    }
+                    .foregroundColor(.blue)
                 }
             } header: {
-                Text("Refresh & Notifications")
+                Text("Notifications")
             } footer: {
-                Text("Get notified when new activities are detected or projects change")
-                    .font(.caption)
+                if viewModel.notificationsEnabled {
+                    Text("Get notified when new activities are detected or projects change")
+                        .font(.caption)
+                } else {
+                    Text("Enable to get notified when new activities are detected or projects change")
+                        .font(.caption)
+                }
             }
             
             // GitHub Integration

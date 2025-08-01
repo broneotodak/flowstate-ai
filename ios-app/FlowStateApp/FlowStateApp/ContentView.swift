@@ -8,7 +8,7 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             // Dashboard Tab
             NavigationView {
-                DashboardView(viewModel: viewModel)
+                DashboardView(viewModel: viewModel, selectedTab: $selectedTab)
             }
             .tabItem {
                 Label("Dashboard", systemImage: "chart.line.uptrend.xyaxis")
@@ -61,10 +61,25 @@ struct ContentView: View {
 // Dashboard View
 struct DashboardView: View {
     @ObservedObject var viewModel: FlowStateViewModel
+    @Binding var selectedTab: Int
     
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // App Description Header
+                VStack(spacing: 4) {
+                    Text("Neo Todak's live task tracker")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    Text("Working with A.I tools, agents and agentic systems")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
                 // Multiple Current Projects Card
                 MultiProjectFlowView(projects: viewModel.currentProjects)
                 
@@ -108,6 +123,7 @@ struct DashboardView: View {
                         Spacer()
                         Button("See All") {
                             // Switch to activities tab
+                            selectedTab = 1
                         }
                         .font(.caption)
                     }
@@ -235,7 +251,15 @@ struct ActivityRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(activity.project_name ?? "Unknown")
+                let displayName = {
+                    if let projectName = activity.project_name,
+                       !projectName.isEmpty && projectName != "Unknown Project" {
+                        return projectName
+                    }
+                    return "General Activity"
+                }()
+                
+                Text(displayName)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.blue)
