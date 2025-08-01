@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# ci_post_clone.sh - FlowState v1.2 iOS Build Setup
-# Optimized for Xcode Cloud reliability
+# ci_post_clone.sh - FlowState v1.2 iOS-ONLY Build Setup
+# Explicitly disable macOS and visionOS to prevent build failures
 
-echo "🚀 FlowState v1.2 - iOS Build Setup Starting..."
+echo "🚀 FlowState v1.2 - iOS-ONLY Build Setup Starting..."
 echo "Build timestamp: $(date)"
 echo "Working directory: $(pwd)"
 echo "Xcode version: $(xcodebuild -version)"
@@ -30,6 +30,27 @@ rm -rf build/
 rm -rf DerivedData/
 xcodebuild clean -project FlowStateApp.xcodeproj -scheme FlowStateApp 2>/dev/null || true
 
+# 🎯 CRITICAL: Disable macOS and visionOS builds
+echo "🎯 Configuring iOS-ONLY builds..."
+
+# Set environment variables to disable unwanted platforms
+export SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD=NO
+export SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD=NO
+export SUPPORTED_PLATFORMS="iphoneos iphonesimulator"
+
+# Create xcconfig file to override platform settings
+cat > ios-only.xcconfig << EOF
+// iOS-Only Build Configuration
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+TARGETED_DEVICE_FAMILY = 1,2
+EOF
+
+echo "✅ iOS-only configuration applied"
+echo "📱 Building for: iPhone and iPad only"
+echo "❌ Disabled: macOS and visionOS"
+
 # Verify essential files
 echo "📋 Verifying essential files..."
 if [ -f "FlowStateApp/FlowStateAppApp.swift" ]; then
@@ -46,10 +67,6 @@ else
     exit 1
 fi
 
-# Set build environment
-export XCODE_XCCONFIG_FILE=""
-export SWIFT_OPTIMIZATION_LEVEL="-O"
-
-echo "✅ FlowState v1.2 iOS-only setup complete"
-echo "🎯 Ready for build phase"
+echo "✅ FlowState v1.2 iOS-ONLY setup complete"
+echo "🎯 Ready for iOS-only build phase"
 exit 0

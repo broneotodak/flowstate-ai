@@ -1,0 +1,35 @@
+---
+formatVersion: "1"
+name: "FlowState iOS Only"
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  push:
+    enabled: true
+  pullRequest:
+    enabled: false
+steps:
+  - name: "iOS Archive"
+    actions:
+      - name: "Archive for iOS"
+        scheme: "FlowStateApp"
+        platform: "iOS"
+        configuration: "Release"
+        destination: "generic/platform=iOS"
+        archivePath: "./build/FlowStateApp.xcarchive"
+        options:
+          - "-allowProvisioningUpdates"
+environments:
+  - name: "iOS Production"
+    variables:
+      SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: "NO"
+      SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: "NO"
+      SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+      BUILD_ONLY_ACTIVE_ARCH: "NO"
+notificationSettings:
+  emails:
+    - ahmad.fadli.bin.ahmad.dahlan@students.ic.ac.uk
+  slackChannels: []
+  webhooks: []
