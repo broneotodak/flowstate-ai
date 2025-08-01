@@ -35,7 +35,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5E7B96002E196B6200753111"
+               BlueprintIdentifier = "5E7B95FC2E196B6200753111"
                BuildableName = "FlowStateAppTests.xctest"
                BlueprintName = "FlowStateAppTests"
                ReferencedContainer = "container:FlowStateApp.xcodeproj">
@@ -46,7 +46,7 @@
             parallelizable = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "5E7B960A2E196B6200753111"
+               BlueprintIdentifier = "5E7B96062E196B6200753111"
                BuildableName = "FlowStateAppUITests.xctest"
                BlueprintName = "FlowStateAppUITests"
                ReferencedContainer = "container:FlowStateApp.xcodeproj">
@@ -74,6 +74,10 @@
             ReferencedContainer = "container:FlowStateApp.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
+      <EnvironmentVariables>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -98,5 +102,14 @@
    <ArchiveAction
       buildConfiguration = "Release"
       revealArchiveInOrganizer = "YES">
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "5E7B95EE2E196B6100753111"
+            BuildableName = "FlowStateApp.app"
+            BlueprintName = "FlowStateApp"
+            ReferencedContainer = "container:FlowStateApp.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
    </ArchiveAction>
 </Scheme>
