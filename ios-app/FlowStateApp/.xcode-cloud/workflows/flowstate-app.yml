@@ -1,8 +1,9 @@
-# FlowState App - Xcode Cloud Workflow Configuration
+# FlowState App - Xcode Cloud Workflow Configuration v1.2
+# Optimized for nested project structure: ios-app/FlowStateApp/
 # This file defines the CI/CD pipeline for automatic building and deployment
 
-name: FlowState App Production
-description: Builds, tests, and deploys FlowState App
+name: FlowState App v1.2 Production
+description: Builds, tests, and deploys FlowState App v1.2 from nested project structure
 
 # When to trigger builds
 on:
@@ -15,40 +16,76 @@ on:
       - main
 
 # Build environment
-platform: macos
-xcode_version: latest
+environment:
+  xcode: 16.4
+  macos: 15.6
+
+# Project configuration for nested structure
+project: ios-app/FlowStateApp/FlowStateApp.xcodeproj
+scheme: FlowStateApp
 
 # Build steps
 steps:
-  # 1. Build the app
+  # 1. Build the app (Release configuration)
   build:
     scheme: FlowStateApp
     destination: generic/platform=iOS
     configuration: Release
+    project: ios-app/FlowStateApp/FlowStateApp.xcodeproj
     
-  # 2. Run tests
+  # 2. Run tests (if needed - currently minimal)
   test:
     scheme: FlowStateApp
     destination: platform=iOS Simulator,name=iPhone 15 Pro,OS=latest
+    project: ios-app/FlowStateApp/FlowStateApp.xcodeproj
     
   # 3. Archive for distribution
   archive:
     scheme: FlowStateApp
     destination: generic/platform=iOS
     configuration: Release
+    project: ios-app/FlowStateApp/FlowStateApp.xcodeproj
+    export_options: ios-app/FlowStateApp/ci_scripts/ExportOptions.plist
 
-# Deployment rules
+# Deployment configuration
 deploy:
   # TestFlight for develop branch
   testflight:
     when:
       branch: develop
     group: "Internal Testing"
+    notes: "FlowState v1.2 beta build - Neo Todak's live task tracker"
     
   # App Store for main branch with version tags
   app_store:
     when:
       branch: main
-      tag: "v*"
-    submit_for_review: true
+      tag: "v1.2*"
+    submit_for_review: false  # Manual review submission
     phased_release: true
+    release_notes: |
+      FlowState v1.2 - Enhanced Dashboard
+      
+      Neo Todak's live task tracker working with A.I tools, agents and agentic systems.
+      
+      New in v1.2:
+      - Enhanced dashboard description
+      - Improved UI/UX
+      - Better integration with AI tools
+      - Optimized performance
+
+# Build settings
+settings:
+  # Use nested project structure
+  working_directory: ios-app/FlowStateApp
+  
+  # Build configuration
+  build_configuration: Release
+  
+  # Code signing
+  team_id: YG4N678CT6
+  bundle_id: com.neotodaksts.FlowStateApp
+  
+  # Version info
+  version: "1.2"
+  build_number: "6"

@@ -1,26 +1,30 @@
 #!/bin/sh
 
-# ci_post_clone.sh for FlowState iOS App - Simple version
-# This script runs after Xcode Cloud clones the repository
+# ci_post_clone.sh for FlowState iOS App v1.2 - REPOSITORY ROOT VERSION
+# This is a backup script at repo root level
+# The main script should be in ios-app/FlowStateApp/ci_scripts/
 
-echo "Xcode Cloud: Setting up FlowState v1.2 build environment..."
+set -e
 
-# Simple environment check
-echo "Current directory: $(pwd)"
-echo "Available files:"
-ls -la
+echo "🚀 Root-level ci_post_clone.sh executing..."
+echo "📍 Current directory: $(pwd)"
 
-# Basic validation - just check if the iOS project exists
-if [ -f "ios-app/FlowStateApp/FlowStateApp.xcodeproj/project.pbxproj" ]; then
-    echo "Xcode project found at ios-app/FlowStateApp/FlowStateApp.xcodeproj"
-else
-    echo "ERROR: Xcode project not found"
-    echo "Looking for: ios-app/FlowStateApp/FlowStateApp.xcodeproj/project.pbxproj"
+# Check if we're in the repository root
+if [ ! -d ".git" ]; then
+    echo "❌ ERROR: Not in repository root"
     exit 1
 fi
 
-echo "Build info: Version 1.2, Build 6"
-echo "Xcode Cloud setup completed successfully"
-echo "Ready to build FlowState v1.2"
+# The iOS project is nested, so just verify structure
+if [ -d "ios-app/FlowStateApp/FlowStateApp.xcodeproj" ]; then
+    echo "✅ iOS project structure verified"
+    echo "🎯 FlowState v1.2 ready for build"
+else
+    echo "❌ ERROR: iOS project structure not found"
+    echo "📂 Repository contents:"
+    ls -la
+    exit 1
+fi
 
+echo "✅ Root-level setup completed"
 exit 0
