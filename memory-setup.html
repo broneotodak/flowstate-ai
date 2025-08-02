@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState Memory Setup - Personal AI Activity Tracking</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><text x='16' y='24' text-anchor='middle' font-size='24' fill='white'>🌊</text></svg>">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Aceternity-inspired glassmorphism - matching main site */
+        .glass {
+            background: rgba(17, 25, 40, 0.75);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+        }
+        
+        /* Gradient backgrounds - matching main site */
+        .gradient-bg {
+            background: linear-gradient(to bottom right, #000000, #0a0a0a);
+        }
+        
+        .card-gradient {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1) 0%, rgba(124, 58, 237, 0.05) 100%);
+        }
+        
+        /* Glow effects - matching main site */
+        .glow {
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.3);
+        }
+        
+        .glow-hover:hover {
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.5);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+        
+        /* Scrollbar styling - matching main site */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(79, 70, 229, 0.5);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(79, 70, 229, 0.7);
+        }
+        
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.6s ease-out forwards;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-blue {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .pulse-blue {
+            animation: pulse-blue 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        /* Shimmer effect */
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+        
+        .shimmer {
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        /* Step indicator styles */
+        .step-indicator {
+            transition: all 0.3s ease;
+        }
+        
+        .step-indicator.completed {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #10b981;
+        }
+        
+        .step-indicator.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border-color: #4f46e5;
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+        }
+        
+        .step-indicator.pending {
+            background: rgba(75, 85, 99, 0.3);
+            border-color: #374151;
+        }
+        
+        /* Input styling */
+        .input-field {
+            background: rgba(17, 25, 40, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            border-color: rgba(79, 70, 229, 0.5);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        
+        /* Success animation */
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .checkmark-animate {
+            animation: checkmark 0.6s ease-out;
+        }
+        
+        /* Code block styling */
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="gradient-bg text-gray-100 min-h-screen">
+    <!-- Background decoration - matching main site -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full filter blur-3xl opacity-10"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full filter blur-3xl opacity-10"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500 rounded-full filter blur-3xl opacity-5"></div>
+    </div>
+    
+    <div class="relative z-10 max-w-6xl mx-auto p-6">
+        <!-- Header - matching main site -->
+        <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="text-5xl float">🌊</div>
+                <div>
+                    <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                        FlowState Memory Setup
+                    </h1>
+                    <p class="text-gray-400 text-sm">Connect your AI tools for personal activity tracking</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="index.html" class="glass px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all flex items-center gap-2">
+                    <span class="text-sm">← Dashboard</span>
+                </a>
+                <a href="how-it-works.html" class="glass px-4 py-2 rounded-full hover:bg-blue-500/20 transition-all flex items-center gap-2">
+                    <span class="text-sm">How It Works</span>
+                    <span class="text-blue-400">→</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <div class="glass rounded-xl p-8 mb-8 card-gradient">
+                <h2 class="text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                    Set Up Your Personal Memory System
+                </h2>
+                <p class="text-xl text-gray-300 mb-6">
+                    Transform your AI conversations and coding sessions into a searchable, intelligent memory system
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                            <span class="text-2xl">🧠</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white mb-2">Smart Memory</h3>
+                            <p class="text-gray-400 text-sm">AI-powered semantic search across all your conversations and coding sessions</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                            <span class="text-2xl">⚡</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white mb-2">Real-time Sync</h3>
+                            <p class="text-gray-400 text-sm">Automatic synchronization from Claude Desktop, Cursor, and other AI tools</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                            <span class="text-2xl">🔒</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-white mb-2">Private & Secure</h3>
+                            <p class="text-gray-400 text-sm">Your data stays in your own Supabase instance - full control and privacy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="flex justify-center mb-12">
+            <div class="flex items-center space-x-4 md:space-x-8">
+                <div class="flex items-center">
+                    <div id="step-1-indicator" class="step-indicator active w-12 h-12 rounded-full border-2 flex items-center justify-center font-semibold text-white">
+                        1
+                    </div>
+                    <span class="ml-3 font-medium text-white">Supabase</span>
+                </div>
+                <div class="w-16 h-0.5 bg-gray-600"></div>
+                <div class="flex items-center">
+                    <div id="step-2-indicator" class="step-indicator pending w-12 h-12 rounded-full border-2 flex items-center justify-center font-semibold text-gray-400">
+                        2
+                    </div>
+                    <span class="ml-3 font-medium text-gray-400">API Keys</span>
+                </div>
+                <div class="w-16 h-0.5 bg-gray-600"></div>
+                <div class="flex items-center">
+                    <div id="step-3-indicator" class="step-indicator pending w-12 h-12 rounded-full border-2 flex items-center justify-center font-semibold text-gray-400">
+                        3
+                    </div>
+                    <span class="ml-3 font-medium text-gray-400">Deploy</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup Container -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Step 1: Supabase Setup -->
+            <div id="step-1" class="glass rounded-xl p-8 mb-8 slide-in">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                        <span class="text-3xl">🏗️</span>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Step 1: Supabase Project Setup</h2>
+                        <p class="text-gray-400">Create your database and configure the memory system</p>
+                    </div>
+                </div>
+                
+                <!-- Quick Deploy Option -->
+                <div class="glass rounded-lg p-6 mb-6 card-gradient">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                            <span class="text-2xl">🚀</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold text-white mb-2">🎯 One-Click Deploy (Recommended)</h3>
+                            <p class="text-gray-300 mb-4">
+                                Deploy our pre-configured FlowState Memory template directly to your Supabase account. 
+                                This includes all tables, functions, and Edge Functions needed for semantic memory search.
+                            </p>
+                            <button 
+                                onclick="deployTemplate()"
+                                class="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 px-6 py-3 rounded-lg font-semibold text-white transition-all glow-hover flex items-center gap-2">
+                                <span class="text-xl">⚡</span>
+                                Deploy FlowState Template
+                            </button>
+                            <p class="text-gray-500 text-sm mt-2">Opens Supabase dashboard with our template pre-loaded</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Setup Option -->
+                <div class="border border-gray-600 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Manual Setup</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Supabase Project URL <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="supabase-url"
+                                placeholder="https://xxxxx.supabase.co"
+                                class="w-full px-4 py-3 input-field rounded-lg text-white placeholder-gray-500"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">Found in your Supabase project dashboard</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Service Role Key <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="password"
+                                id="service-key"
+                                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                class="w-full px-4 py-3 input-field rounded-lg text-white placeholder-gray-500"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">Settings → API → service_role (Keep this secret!)</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                Anon/Public Key
+                            </label>
+                            <input
+                                type="text"
+                                id="anon-key"
+                                placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                class="w-full px-4 py-3 input-field rounded-lg text-white placeholder-gray-500"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">Settings → API → anon public</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        onclick="nextStep()"
+                        id="step-1-continue"
+                        disabled
+                        class="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-semibold text-white transition-all">
+                        Continue to API Configuration
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: API Keys -->
+            <div id="step-2" class="glass rounded-xl p-8 mb-8 slide-in hidden">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
+                        <span class="text-3xl">🔑</span>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Step 2: AI Services Configuration</h2>
+                        <p class="text-gray-400">Connect to OpenAI for semantic embeddings and optionally GitHub for commit tracking</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- OpenAI API Key -->
+                    <div class="border border-gray-600 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🤖</span>
+                            <h3 class="text-lg font-semibold text-white">OpenAI API Key</h3>
+                            <span class="px-2 py-1 bg-red-500/20 text-red-300 text-xs rounded-full">Required</span>
+                        </div>
+                        <input
+                            type="password"
+                            id="openai-key"
+                            placeholder="sk-proj-..."
+                            class="w-full px-4 py-3 input-field rounded-lg text-white placeholder-gray-500 mb-3"
+                        />
+                        <div class="text-sm text-gray-400">
+                            <p class="mb-2">Used for generating semantic embeddings that power intelligent memory search.</p>
+                            <p>Get your API key from: 
+                                <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-400 hover:text-blue-300 underline">
+                                    OpenAI Dashboard →
+                                </a>
+                            </p>
+                            <p class="text-xs text-gray-500 mt-2">💰 Cost: ~$2-5/month for typical usage</p>
+                        </div>
+                    </div>
+
+                    <!-- GitHub Access Token -->
+                    <div class="border border-gray-600 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">🐙</span>
+                            <h3 class="text-lg font-semibold text-white">GitHub Access Token</h3>
+                            <span class="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">Optional</span>
+                        </div>
+                        <input
+                            type="password"
+                            id="github-token"
+                            placeholder="github_pat_..."
+                            class="w-full px-4 py-3 input-field rounded-lg text-white placeholder-gray-500 mb-3"
+                        />
+                        <div class="text-sm text-gray-400">
+                            <p class="mb-2">Enables automatic tracking of commits, PRs, and repository activities in your FlowState dashboard.</p>
+                            <p>Create a token at: 
+                                <a href="https://github.com/settings/tokens" target="_blank" class="text-blue-400 hover:text-blue-300 underline">
+                                    GitHub Settings →
+                                </a>
+                            </p>
+                            <p class="text-xs text-gray-500 mt-2">Required scopes: repo, read:user</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <button 
+                            onclick="previousStep()"
+                            class="flex-1 bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-semibold text-white transition-all">
+                            ← Back
+                        </button>
+                        <button 
+                            onclick="nextStep()"
+                            id="step-2-continue"
+                            disabled
+                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-semibold text-white transition-all">
+                            Deploy Memory System
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Deploy -->
+            <div id="step-3" class="glass rounded-xl p-8 mb-8 slide-in hidden">
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                        <span class="text-3xl">🚀</span>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">Step 3: Deploy & Configure</h2>
+                        <p class="text-gray-400">Setting up your FlowState memory infrastructure</p>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Deployment Status -->
+                    <div class="border border-yellow-500/30 bg-yellow-500/10 rounded-lg p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <span class="text-2xl">⚡</span>
+                            <h3 class="text-lg font-semibold text-yellow-300">Deployment in Progress</h3>
+                        </div>
+                        <p class="text-yellow-200 mb-4">
+                            We're setting up your FlowState memory system. This includes:
+                        </p>
+                        <ul class="space-y-2 text-yellow-200 text-sm">
+                            <li class="flex items-center gap-2">
+                                <div id="deploy-status-1" class="w-4 h-4 border-2 border-yellow-400 rounded-full animate-spin"></div>
+                                PostgreSQL tables with pgvector extension
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <div id="deploy-status-2" class="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
+                                Edge function for memory processing
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <div id="deploy-status-3" class="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
+                                Database triggers for automatic sync
+                            </li>
+                            <li class="flex items-center gap-2">
+                                <div id="deploy-status-4" class="w-4 h-4 border-2 border-gray-400 rounded-full"></div>
+                                OpenAI embedding generation setup
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button 
+                        onclick="deploy()"
+                        id="deploy-button"
+                        class="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 px-6 py-4 rounded-lg font-semibold text-white transition-all text-lg">
+                        <span class="text-xl mr-2">🚀</span>
+                        Start Deployment
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Success -->
+            <div id="step-4" class="glass rounded-xl p-8 mb-8 slide-in hidden">
+                <div class="text-center">
+                    <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center checkmark-animate">
+                        <span class="text-4xl">✅</span>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-4">🎉 FlowState Memory is Live!</h2>
+                    <p class="text-xl text-gray-300 mb-8">
+                        Your personal AI memory system is now ready to capture and organize your digital activities.
+                    </p>
+                    
+                    <!-- Integration URLs -->
+                    <div class="glass rounded-lg p-6 mb-6 text-left">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                            <span>🔗</span>
+                            Integration Configuration
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="code-block rounded-lg p-4">
+                                <label class="block text-sm font-medium text-gray-400 mb-2">Memory API Endpoint:</label>
+                                <div class="flex items-center gap-2">
+                                    <code id="memory-endpoint" class="flex-1 text-green-400 text-sm break-all">
+                                        <!-- Will be populated by JavaScript -->
+                                    </code>
+                                    <button onclick="copyToClipboard('memory-endpoint')" class="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors">
+                                        📋 Copy
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="code-block rounded-lg p-4">
+                                <label class="block text-sm font-medium text-gray-400 mb-2">FlowState Dashboard:</label>
+                                <div class="flex items-center gap-2">
+                                    <code id="dashboard-url" class="flex-1 text-blue-400 text-sm break-all">
+                                        <!-- Will be populated by JavaScript -->
+                                    </code>
+                                    <button onclick="copyToClipboard('dashboard-url')" class="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs transition-colors">
+                                        📋 Copy
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Next Steps -->
+                    <div class="glass rounded-lg p-6 mb-6 text-left card-gradient">
+                        <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                            <span>🛠️</span>
+                            Next Steps
+                        </h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <span class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-xs font-semibold text-white">1</span>
+                                <div>
+                                    <p class="text-white font-medium">Configure Claude Desktop</p>
+                                    <p class="text-gray-400 text-sm">Add the memory endpoint to your Claude Desktop settings</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-xs font-semibold text-white">2</span>
+                                <div>
+                                    <p class="text-white font-medium">Install Browser Extension</p>
+                                    <p class="text-gray-400 text-sm">Track your web browsing and GitHub activities automatically</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <span class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-xs font-semibold text-white">3</span>
+                                <div>
+                                    <p class="text-white font-medium">Start Using FlowState</p>
+                                    <p class="text-gray-400 text-sm">Your activities will automatically appear in the dashboard</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <a 
+                            href="#" 
+                            id="dashboard-link"
+                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 px-6 py-3 rounded-lg font-semibold text-white transition-all text-center">
+                            🌊 Open FlowState Dashboard
+                        </a>
+                        <a 
+                            href="how-it-works.html"
+                            class="flex-1 bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg font-semibold text-white transition-all text-center">
+                            📖 Read Documentation
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let currentStep = 1;
+        let config = {
+            supabaseUrl: '',
+            serviceKey: '',
+            anonKey: '',
+            openaiKey: '',
+            githubToken: ''
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStepValidation();
+            
+            // Add input listeners
+            document.getElementById('supabase-url').addEventListener('input', updateStepValidation);
+            document.getElementById('service-key').addEventListener('input', updateStepValidation);
+            document.getElementById('openai-key').addEventListener('input', updateStepValidation);
+        });
+
+        // Deploy template to Supabase
+        function deployTemplate() {
+            const templateUrl = 'https://supabase.com/new?template=flowstate-memory';
+            window.open(templateUrl, '_blank');
+            
+            // Show notification
+            showNotification('Template opened in Supabase! Complete the setup there, then return to continue.', 'info');
+        }
+
+        // Step navigation
+        function nextStep() {
+            if (currentStep < 4) {
+                // Save current step data
+                saveStepData();
+                
+                // Hide current step
+                document.getElementById(`step-${currentStep}`).classList.add('hidden');
+                
+                // Update step indicators
+                document.getElementById(`step-${currentStep}-indicator`).classList.remove('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.add('completed');
+                document.getElementById(`step-${currentStep}-indicator`).innerHTML = '✓';
+                
+                // Show next step
+                currentStep++;
+                if (currentStep <= 3) {
+                    document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+                    document.getElementById(`step-${currentStep}-indicator`).classList.add('active');
+                    document.getElementById(`step-${currentStep}-indicator`).classList.remove('pending');
+                }
+                
+                updateStepValidation();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                // Hide current step
+                document.getElementById(`step-${currentStep}`).classList.add('hidden');
+                document.getElementById(`step-${currentStep}-indicator`).classList.remove('active');
+                document.getElementById(`step-${currentStep}-indicator`).classList.add('pending');
+                
+                // Show previous step
+                currentStep--;
+                document.getElementById(`step-${currentStep}`).classList.remove('hidden');
+                document.getElementById(`step-${currentStep}-indicator`).classList.remove('completed');
+                document.getElementById(`step-${currentStep}-indicator`).classList.add('active');
+                document.getElementById(`step-${currentStep}-indicator`).innerHTML = currentStep;
+                
+                updateStepValidation();
+            }
+        }
+
+        // Save step data
+        function saveStepData() {
+            if (currentStep === 1) {
+                config.supabaseUrl = document.getElementById('supabase-url').value;
+                config.serviceKey = document.getElementById('service-key').value;
+                config.anonKey = document.getElementById('anon-key').value;
+            } else if (currentStep === 2) {
+                config.openaiKey = document.getElementById('openai-key').value;
+                config.githubToken = document.getElementById('github-token').value;
+            }
+        }
+
+        // Update step validation
+        function updateStepValidation() {
+            if (currentStep === 1) {
+                const isValid = document.getElementById('supabase-url').value && 
+                               document.getElementById('service-key').value;
+                document.getElementById('step-1-continue').disabled = !isValid;
+            } else if (currentStep === 2) {
+                const isValid = document.getElementById('openai-key').value;
+                document.getElementById('step-2-continue').disabled = !isValid;
+            }
+        }
+
+        // Deploy function
+        async function deploy() {
+            const deployButton = document.getElementById('deploy-button');
+            deployButton.disabled = true;
+            deployButton.innerHTML = '<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>';
+            
+            // Simulate deployment steps
+            const steps = [
+                { id: 1, duration: 2000, text: 'Creating database schema...' },
+                { id: 2, duration: 3000, text: 'Deploying Edge Functions...' },
+                { id: 3, duration: 2000, text: 'Setting up triggers...' },
+                { id: 4, duration: 1500, text: 'Configuring OpenAI integration...' }
+            ];
+            
+            for (const step of steps) {
+                await simulateDeploymentStep(step);
+            }
+            
+            // Show success
+            setTimeout(() => {
+                showSuccessStep();
+            }, 1000);
+        }
+
+        async function simulateDeploymentStep(step) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const statusEl = document.getElementById(`deploy-status-${step.id}`);
+                    statusEl.classList.remove('animate-spin', 'border-gray-400');
+                    statusEl.classList.add('bg-green-500', 'border-green-500');
+                    
+                    // Start next step animation
+                    if (step.id < 4) {
+                        const nextStatusEl = document.getElementById(`deploy-status-${step.id + 1}`);
+                        nextStatusEl.classList.add('animate-spin', 'border-yellow-400');
+                        nextStatusEl.classList.remove('border-gray-400');
+                    }
+                    
+                    resolve();
+                }, step.duration);
+            });
+        }
+
+        function showSuccessStep() {
+            // Hide step 3
+            document.getElementById('step-3').classList.add('hidden');
+            
+            // Update final step indicator
+            document.getElementById('step-3-indicator').classList.remove('active');
+            document.getElementById('step-3-indicator').classList.add('completed');
+            document.getElementById('step-3-indicator').innerHTML = '✓';
+            
+            // Show success step
+            document.getElementById('step-4').classList.remove('hidden');
+            
+            // Populate URLs
+            const baseUrl = config.supabaseUrl || 'https://your-project.supabase.co';
+            document.getElementById('memory-endpoint').textContent = `${baseUrl}/functions/v1/flowstate-memory`;
+            document.getElementById('dashboard-url').textContent = `https://flowstate.neotodak.com?supabase_url=${encodeURIComponent(baseUrl)}`;
+            document.getElementById('dashboard-link').href = `https://flowstate.neotodak.com?supabase_url=${encodeURIComponent(baseUrl)}`;
+        }
+
+        // Utility functions
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard!', 'success');
+            }).catch(() => {
+                showNotification('Failed to copy', 'error');
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 transition-all ${
+                type === 'success' ? 'bg-green-600' :
+                type === 'error' ? 'bg-red-600' :
+                'bg-blue-600'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
