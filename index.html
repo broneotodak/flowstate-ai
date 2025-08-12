@@ -399,7 +399,39 @@
             }
         }
         
-        // Render activities with better UI
+        // Group activities by date
+        function groupActivitiesByDate(activities) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+            const thisWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            
+            const groups = {
+                'Today': [],
+                'Yesterday': [],
+                'This Week': [],
+                'Older': []
+            };
+            
+            activities.forEach(activity => {
+                const activityDate = new Date(activity.created_at.includes('Z') || activity.created_at.includes('+') ? activity.created_at : activity.created_at + 'Z');
+                const activityDay = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
+                
+                if (activityDay.getTime() === today.getTime()) {
+                    groups['Today'].push(activity);
+                } else if (activityDay.getTime() === yesterday.getTime()) {
+                    groups['Yesterday'].push(activity);
+                } else if (activityDate >= thisWeek) {
+                    groups['This Week'].push(activity);
+                } else {
+                    groups['Older'].push(activity);
+                }
+            });
+            
+            return groups;
+        }
+        
+        // Render activities with better UI and date grouping
         function renderActivities() {
             const container = document.getElementById('activity-list');
             const searchTerm = document.getElementById('activity-search').value.toLowerCase();
@@ -417,40 +449,71 @@
             });
             
             if (filtered.length === 0) {
-                container.innerHTML = '<div class="text-center py-8 text-gray-500">No activities found</div>';
-                return;
-            }
-            
-            container.innerHTML = filtered.map(activity => {
-                const projectName = activity.metadata?.project || activity.category || 'General';
-                const colors = getProjectColor(projectName);
-                const time = formatTime(activity.created_at);
-                const activityType = activity.memory_type || 'note';
-                const icon = getActivityIcon(activityType);
-                
-                return `
-                    <div class="glass rounded-lg p-4 activity-item hover:bg-white/5 transition-all">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-3 mb-2">
-                                    <span class="text-xl">${icon}</span>
-                                    <span class="project-badge" style="background: ${colors.bg}; border-color: ${colors.border}; color: ${colors.text};">
-                                        ${projectName}
-                                    </span>
-                                    <span class="text-xs text-gray-500">${activityType}</span>
-                                </div>
-                                <div class="text-sm text-gray-300 mb-1">
-                                    <strong>${activity.title || 'Memory'}</strong>
-                                    ${activity.content ? `: ${activity.content.substring(0, 150)}${activity.content.length > 150 ? '...' : ''}` : ''}
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    ${activity.metadata?.machine || 'Unknown Machine'} • ${time}
-                                </div>
-                            </div>
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="text-6xl mb-4">🔍</div>
+                        <h3 class="text-lg font-semibold mb-2">No Activities Found</h3>
+                        <p class="text-sm mb-4">Try adjusting your search terms or check back later.</p>
+                        <div class="glass px-4 py-2 rounded-lg inline-block">
+                            <span class="text-blue-400">💡 Tip:</span> Activities are automatically tracked when you use the browser extension
                         </div>
                     </div>
                 `;
-            }).join('');
+                return;
+            }
+            
+            // Group activities by date
+            const groupedActivities = groupActivitiesByDate(filtered);
+            
+            let html = '';
+            
+            // Render each group
+            Object.entries(groupedActivities).forEach(([groupName, groupActivities]) => {
+                if (groupActivities.length === 0) return;
+                
+                // Add section header
+                html += `
+                    <div class="flex items-center gap-3 mb-4 mt-6 first:mt-0">
+                        <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">${groupName}</h3>
+                        <div class="flex-1 h-px bg-gradient-to-r from-gray-700 to-transparent"></div>
+                        <span class="text-xs text-gray-500">${groupActivities.length} item${groupActivities.length !== 1 ? 's' : ''}</span>
+                    </div>
+                `;
+                
+                // Add activities in this group
+                html += groupActivities.map(activity => {
+                    const projectName = activity.metadata?.project || activity.category || 'General';
+                    const colors = getProjectColor(projectName);
+                    const timeAgo = getTimeAgo(activity.created_at);
+                    const activityType = activity.memory_type || 'note';
+                    const icon = getActivityIcon(activityType);
+                    
+                    return `
+                        <div class="glass rounded-lg p-4 activity-item hover:bg-white/5 transition-all mb-3">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <span class="text-xl">${icon}</span>
+                                        <span class="project-badge" style="background: ${colors.bg}; border-color: ${colors.border}; color: ${colors.text};">
+                                            ${projectName}
+                                        </span>
+                                        <span class="text-xs text-gray-500">${activityType}</span>
+                                    </div>
+                                    <div class="text-sm text-gray-300 mb-1">
+                                        <strong>${activity.title || 'Memory'}</strong>
+                                        ${activity.content ? `: ${activity.content.substring(0, 150)}${activity.content.length > 150 ? '...' : ''}` : ''}
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        ${activity.metadata?.machine || 'Unknown Machine'} • ${timeAgo}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
+            
+            container.innerHTML = html;
         }
         
         // Load machines
@@ -498,7 +561,16 @@
             const container = document.getElementById('machine-grid');
             
             if (machines.length === 0) {
-                container.innerHTML = '<div class="text-center py-8 text-gray-500">No machines connected</div>';
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-5xl mb-4">🖥️</div>
+                        <h3 class="text-lg font-semibold mb-2">No Connected Machines</h3>
+                        <p class="text-sm mb-4">Install the FlowState extension to track your devices!</p>
+                        <div class="glass px-4 py-2 rounded-lg inline-block">
+                            <span class="text-purple-400">📱 Get Started:</span> Download the browser extension above
+                        </div>
+                    </div>
+                `;
                 return;
             }
             
@@ -668,7 +740,16 @@
             const container = document.getElementById('current-projects-list');
             
             if (!contexts || contexts.length === 0) {
-                container.innerHTML = '<div class="text-center py-4 text-gray-500">No active development today</div>';
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-5xl mb-4">💻</div>
+                        <h3 class="text-lg font-semibold mb-2">No Active Development</h3>
+                        <p class="text-sm mb-4">Start coding to see your active projects here!</p>
+                        <div class="glass px-4 py-2 rounded-lg inline-block">
+                            <span class="text-blue-400">🚀 Quick Start:</span> Open your IDE and start working on a project
+                        </div>
+                    </div>
+                `;
                 return;
             }
             
@@ -731,7 +812,16 @@
             const container = document.getElementById('github-projects-list');
             
             if (!projects || projects.length === 0) {
-                container.innerHTML = '<div class="text-center py-4 text-gray-500">No GitHub activity in the last 2 hours</div>';
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-5xl mb-4">🐙</div>
+                        <h3 class="text-lg font-semibold mb-2">No Recent Git Activity</h3>
+                        <p class="text-sm mb-4">Make some commits to see your Git activity here!</p>
+                        <div class="glass px-4 py-2 rounded-lg inline-block">
+                            <span class="text-green-400">💡 Tip:</span> Git commits and browser activity will appear here
+                        </div>
+                    </div>
+                `;
                 return;
             }
             
@@ -896,16 +986,44 @@
             return date.toLocaleDateString();
         }
         
+        // Human-readable timestamps function
+        function getTimeAgo(timestamp) {
+            const date = new Date(timestamp.includes('Z') || timestamp.includes('+') ? timestamp : timestamp + 'Z');
+            const now = new Date();
+            const diff = now - date;
+            
+            const seconds = Math.floor(diff / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+            const years = Math.floor(days / 365);
+            
+            if (seconds < 60) return 'Just now';
+            if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+            if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+            if (weeks < 4) return `${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+            if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`;
+            return `${years} year${years !== 1 ? 's' : ''} ago`;
+        }
+        
         function getActivityIcon(type) {
             const icons = {
-                // Original activity types
+                // Specific activity type icons as requested
+                'development': '⚡',
+                'debugging': '🐛',
+                'testing': '🧪',
+                'deployment': '🚀',
+                'documentation': '📝',
                 'git_commit': '💾',
-                'git_push': '🚀',
                 'browser_activity': '🌐',
+                // Additional activity types
+                'git_push': '🚀',
                 'ai_conversation': '🤖',
                 'terminal_command': '⌨️',
                 'file_edit': '✏️',
-                // Memory types from claude_desktop_memory
                 'technical_solution': '🔧',
                 'code_review': '👀',
                 'bug_fix': '🐛',
@@ -918,7 +1036,7 @@
                 'meeting': '📅',
                 'research': '🔍'
             };
-            return icons[type] || '📌';
+            return icons[type] || '🔹'; // Default icon as requested
         }
         
         // Initialize on load
