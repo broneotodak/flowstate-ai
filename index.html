@@ -485,7 +485,7 @@
                     const projectName = activity.metadata?.project || activity.category || 'General';
                     const colors = getProjectColor(projectName);
                     const timeAgo = getTimeAgo(activity.created_at);
-                    const activityType = activity.memory_type || 'note';
+                    const activityType = activity.activity_type || activity.memory_type || 'note';
                     const icon = getActivityIcon(activityType);
                     
                     return `
@@ -1016,17 +1016,30 @@
                 'debugging': '🐛',
                 'testing': '🧪',
                 'deployment': '🚀',
+                'deployment_success': '🎉',
                 'documentation': '📝',
                 'git_commit': '💾',
                 'browser_activity': '🌐',
+                // Database activity types found
+                'solution': '💡',
+                'technical_solution': '🔧',
+                'ui_update': '🎨',
+                'system_verification': '✅',
+                'bug_fix': '🐛',
+                'context_switch': '🔄',
+                'session_summary': '📊',
+                'session_start': '▶️',
+                'session_end': '⏹️',
+                'conversation_progress': '💬',
+                'activity': '📌',
+                'general': '📌',
+                'progress_update': '📈',
                 // Additional activity types
                 'git_push': '🚀',
                 'ai_conversation': '🤖',
                 'terminal_command': '⌨️',
                 'file_edit': '✏️',
-                'technical_solution': '🔧',
                 'code_review': '👀',
-                'bug_fix': '🐛',
                 'feature': '✨',
                 'note': '📝',
                 'idea': '💡',
@@ -1036,7 +1049,7 @@
                 'meeting': '📅',
                 'research': '🔍'
             };
-            return icons[type] || '🔹'; // Default icon as requested
+            return icons[type?.toLowerCase()] || '🔹'; // Default icon with toLowerCase for case-insensitive matching
         }
         
         // Initialize on load
