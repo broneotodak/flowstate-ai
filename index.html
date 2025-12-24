@@ -13,8 +13,14 @@
     <script src="config.js"></script>
     
     <!-- Tailwind CSS -->
-    <!-- Note: For production, consider installing Tailwind via npm. CDN is used here for simplicity -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using Tailwind Play CDN for simplicity - for production, consider build step -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <script>
+        // Suppress Tailwind CDN warning in production
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = { corePlugins: { preflight: true } };
+        }
+    </script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -323,7 +329,9 @@
         const SUPABASE_URL = window.FLOWSTATE_CONFIG?.SUPABASE_URL;
         const SUPABASE_ANON_KEY = window.FLOWSTATE_CONFIG?.SUPABASE_ANON_KEY;
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Initialize Supabase client (prevent duplicate declaration)
+        window.flowstateSupabase = window.flowstateSupabase || window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const db = window.flowstateSupabase;
         
         // State
         let activities = [];
@@ -387,7 +395,7 @@
         
         // Load activities
         async function loadActivities() {
-            const { data, error } = await supabase
+            const { data, error } = await db
                 .from('claude_desktop_memory')
                 .select('*')
                 .order('created_at', { ascending: false })
@@ -519,7 +527,7 @@
         // Load machines
         async function loadMachines() {
             // Get unique machines from recent activities
-            const { data, error } = await supabase
+            const { data, error } = await db
                 .from('claude_desktop_memory')
                 .select('metadata, created_at')
                 .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
@@ -604,7 +612,7 @@
             const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
             
             // Get all recent activities with machine info
-            const { data: activities, error } = await supabase
+            const { data: activities, error } = await db
                 .from('claude_desktop_memory')
                 .select('*')
                 .gte('created_at', twoHoursAgo)
@@ -883,7 +891,7 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             
-            const { count: todayCount } = await supabase
+            const { count: todayCount } = await db
                 .from('flowstate_activities')
                 .select('*', { count: 'exact', head: true })
                 .gte('created_at', today.toISOString());
@@ -891,7 +899,7 @@
             document.getElementById('today-activities').textContent = todayCount || 0;
             
             // Active projects
-            const { data: projects } = await supabase
+            const { data: projects } = await db
                 .from('flowstate_activities')
                 .select('project_name')
                 .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
@@ -903,7 +911,7 @@
             document.getElementById('connected-machines').textContent = machines.length; // All are active from last 7 days
             
             // Total commits
-            const { count: commitCount } = await supabase
+            const { count: commitCount } = await db
                 .from('flowstate_activities')
                 .select('*', { count: 'exact', head: true })
                 .eq('activity_type', 'git_commit');
@@ -914,7 +922,7 @@
         // Setup realtime subscriptions
         function setupRealtimeSubscriptions() {
             // Subscribe to activities
-            supabase
+            db
                 .channel('activities')
                 .on('postgres_changes', 
                     { event: '*', schema: 'public', table: 'activity_log' },
@@ -927,7 +935,7 @@
                 .subscribe();
             
             // Subscribe to machines
-            supabase
+            db
                 .channel('machines')
                 .on('postgres_changes',
                     { event: '*', schema: 'public', table: 'activity_log' },
@@ -939,7 +947,7 @@
                 .subscribe();
             
             // Subscribe to current context
-            supabase
+            db
                 .channel('context')
                 .on('postgres_changes',
                     { event: '*', schema: 'public', table: 'current_context' },
